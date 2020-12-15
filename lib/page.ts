@@ -40,19 +40,21 @@ export const renderPage: PageRenderer = ({
       <li>
         <h3>${group.heading}</h3>
         <ul>${
-          group.children.map((action, ia) =>
-            `
+        group.children.map((action, ia) =>
+          `
           <li>
             <form method="post" action="/actions.json">
               <input type="hidden" name="id" value="${action.id}">
               <details>
                   <summary>
                     <input type="checkbox" name="done"${
-              action.done ? " checked" : ""
-            }>
+            action.done ? " checked" : ""
+          }>
                     ${action.title}
                     ${action.tags.map((tag) => `<i>${tag}</i>`).join(" ")} 
-                    <strong><time>${action.date}</time></strong>
+                    ${
+            action.date ? `<strong><time>${action.date}</time></strong>` : ""
+          }
                   </summary>
                   <textarea name="body" cols="50" rows="5">${action.body}</textarea>
                   <input type="submit" value="Save"/>

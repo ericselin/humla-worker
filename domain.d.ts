@@ -1,13 +1,13 @@
 /// <reference path="./lib.d.ts" />
 
-type ID = number;
+type ID = string;
 
 type Action = {
   id: ID;
   title: string;
-  date: string;
   tags: string[];
-  context: string;
+  date?: string;
+  context?: string;
   body: string;
   done?: boolean;
 };
