@@ -1,12 +1,6 @@
-/// <reference no-default-lib="true"/>
-/// <reference lib="webworker" />
-/// <reference lib="es2020" />
-
-declare const self: ServiceWorkerGlobalScope;
+/// <reference path="../domain.d.ts" />
 
 import { renderPage } from "./page.ts";
-import type { Action, ActionGroup } from "./actions.ts";
-import { getActions, saveAction } from "./actions.ts";
 
 const groupBy = <K extends keyof Action>(field: K) =>
   (actions: Action[]): ActionGroup[] => {
@@ -24,13 +18,7 @@ const groupBy = <K extends keyof Action>(field: K) =>
     return Object.values(groupMap);
   };
 
-type ResponseHandler = (request: Request) => Promise<Response> | Response;
-
-const handleAssetRequest: ResponseHandler = async (request) => {
-  return await caches.match(request) || fetch(request);
-};
-
-const handlePageRequest: ResponseHandler = async (request) => {
+export const getPageHandler: PageHandler = (getActions) => async (request) => {
   const list = await Promise
     .resolve()
     .then(getActions)
@@ -46,7 +34,7 @@ const handlePageRequest: ResponseHandler = async (request) => {
   );
 };
 
-const handleFormRequest: ResponseHandler = async (request) => {
+export const getSaveHandler: SaveHandler = (saveAction) => async (request) => {
   const form = await request.formData();
   const id = form.get("id");
   const done = form.get("done");
@@ -71,30 +59,17 @@ const handleFormRequest: ResponseHandler = async (request) => {
   );
 };
 
-const handleRequest: ResponseHandler = async (request) => {
-  const url = new URL(request.url);
+export const getMainHandler: MainHandler = (
+  { handleAsset, handlePage, handleSave },
+) =>
+  async (request) => {
+    const url = new URL(request.url);
 
-  if (request.method === "GET" && !url.pathname.includes(".")) {
-    return handlePageRequest(request);
-  } else if (request.method === "POST") {
-    return handleFormRequest(request);
-  }
+    if (request.method === "GET" && !url.pathname.includes(".")) {
+      return handlePage(request);
+    } else if (request.method === "POST") {
+      return handleSave(request);
+    }
 
-  return handleAssetRequest(request);
-};
-
-self.addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
-});
-
-const populateCache = async () => {
-  const cache = await caches.open("v1");
-  return cache.addAll([
-    "/app.js",
-    "actions.json",
-  ]);
-};
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(populateCache());
-});
+    return handleAsset(request);
+  };

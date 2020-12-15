@@ -1,4 +1,4 @@
-import type { ActionGroup } from "./actions.ts";
+/// <reference path="../domain.d.ts" />
 
 type PageRenderer = (options: {
   list: ActionGroup[];
