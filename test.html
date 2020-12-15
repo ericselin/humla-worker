@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humla App - Simple but powerful todo manager</title>
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <h1>Humla App</h1>
+  <header>
+    <nav>
+      <h2>Dates</h2>
+      <ul>
+        <li><a href="/unprocessed">Unprocessed</a></li>
+        <li><a href="/today">Today</a></li>
+        <li><a href="/week">This Week</a></li>
+        <li><a href="/later">Later</a></li>
+        <li><a href="/someday">Someday</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h2>Todays actions</h2>
+    <ul>
+      <li>
+        <h3>@personal</h3>
+        <ul>
+          <li>
+            <details>
+              <summary>
+                <input type="checkbox" name="" id="">
+                t-shirts / measure existing shirt and body
+                <i>#home</i> <strong><time>later</time></strong>
+              </summary>
+              <textarea name="" id="" cols="50" rows="5">
+t-shirts / measure existing shirt and body
+order from son of a tailor
+@personal #home !later
+              </textarea>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>
+                <input type="checkbox" name="" id="">
+                buy socks from nike for verro
+                <i>#errands</i> <strong><time>later</time></strong>
+              </summary>
+              <textarea name="" id="" cols="50" rows="5">
+buy socks from nike for verro @personal #errands
+              </textarea>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>
+                <input type="checkbox" name="" id="">
+                registrera freja
+                <i>#home</i> <strong><time>later</time></strong>
+              </summary>
+              <textarea name="" id="" cols="50" rows="5">
+registrera freja
+@personal #home
+              </textarea>
+            </details>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <h3>@brf</h3>
+        <ul>
+          <li>
+            <details>
+              <summary>
+                <input type="checkbox" name="" id="">
+                @brf ovk / ask ventkraft abt avisering januari
+                <strong><time>later</time></strong>
+              </summary>
+              <textarea name="" id="" cols="50" rows="5">
+@brf ovk / ask ventkraft abt avisering januari
+              </textarea>
+            </details>
+          </li>
+          <li>
+            <details>
+              <summary>
+                <input type="checkbox" name="" id="">
+                @brf cyklar / W/F jonas
+                <strong><time>later</time></strong>
+              </summary>
+              <textarea name="" id="" cols="50" rows="5">
+@brf cyklar / W/F jonas
+              </textarea>
+            </details>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <aside>
+      <h2>
+        Add new task
+      </h2>
+      <textarea name="" id="" cols="50" rows="5"></textarea>
+    </aside>
+  </main>
+  <footer>
+    <nav>
+      <h2>Contexts</h2>
+      <ul>
+        <li><a href="/contexts/brf">@brf</a></li>
+        <li><a href="/contexts/personal">@personal</a></li>
+        <li><a href="/contexts/work">@work</a></li>
+      </ul>
+      <h2>Tags</h2>
+      <ul>
+        <li><a href="/tags/home">#home</a></li>
+        <li><a href="/tags/errands">#errands</a></li>
+        <li><a href="/tags/knackis">#knackis</a></li>
+        <li><a href="/tags/bank">#bank</a></li>
+        <li><a href="/tags/mini">#mini</a></li>
+      </ul>
+    </nav>
+  </footer>
+</body>
+
+</html>

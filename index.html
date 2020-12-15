@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humla App - Simple but powerful todo manager</title>
+  <script src="/app.js"></script>
+</head>
+
+<body>
+  <h1>Humla App</h1>
+  <header>
+    <nav>
+      <h2>Dates</h2>
+      <ul>
+        <li><a href="/unprocessed">Unprocessed</a></li>
+        <li><a href="/today">Today</a></li>
+        <li><a href="/week">This Week</a></li>
+        <li><a href="/later">Later</a></li>
+        <li><a href="/someday">Someday</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h2>Todays actions</h2>
+    <p>
+      🎉<br>
+      No actions for today, congratulations!
+    </p>
+    <aside>
+      <h2>
+        Add new action
+      </h2>
+      <p>
+        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your
+        actions.
+      </p>
+      <p>
+        New actions will go under <i>Unprocessed</i> unless you set a date for them.
+        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.
+      </p>
+      <textarea name="" id="" cols="50" rows="5"></textarea>
+    </aside>
+  </main>
+  <footer>
+    <nav>
+      <h2>Contexts</h2>
+      <ul>
+        <li><a href="/contexts/brf">@brf</a></li>
+        <li><a href="/contexts/personal">@personal</a></li>
+        <li><a href="/contexts/work">@work</a></li>
+      </ul>
+      <h2>Tags</h2>
+      <ul>
+        <li><a href="/tags/home">#home</a></li>
+        <li><a href="/tags/errands">#errands</a></li>
+        <li><a href="/tags/knackis">#knackis</a></li>
+        <li><a href="/tags/bank">#bank</a></li>
+        <li><a href="/tags/mini">#mini</a></li>
+      </ul>
+    </nav>
+  </footer>
+</body>
+
+</html>
