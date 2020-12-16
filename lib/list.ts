@@ -1,3 +1,5 @@
+/// <reference path="../domain.d.ts" />
+
 export const groupBy = <K extends keyof Action>(field: K) =>
   (actions: Action[]): ActionGroup[] => {
     if (field !== "context") throw new Error("Not implemented");
