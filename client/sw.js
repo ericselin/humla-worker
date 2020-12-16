@@ -787,10 +787,13 @@ const routes = {
         filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
     },
     "/later": {
-        filter: (action)=>action.date === "later"
+        filter: (action)=>!action.done && action.date === "later"
     },
     "/someday": {
-        filter: (action)=>action.date === "someday"
+        filter: (action)=>!action.done && action.date === "someday"
+    },
+    "/all": {
+        filter: (action)=>!action.done
     }
 };
 const getPageHandler = (getActions)=>async (request)=>{

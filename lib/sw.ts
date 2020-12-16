@@ -30,10 +30,13 @@ const routes: { [pathname: string]: RouteConfig } = {
       (action.date >= thisMonday() && action.date <= sunday()),
   },
   "/later": {
-    filter: (action) => action.date === "later",
+    filter: (action) => !action.done && action.date === "later",
   },
   "/someday": {
-    filter: (action) => action.date === "someday",
+    filter: (action) => !action.done && action.date === "someday",
+  },
+  "/all": {
+    filter: (action) => !action.done,
   },
 };
 
