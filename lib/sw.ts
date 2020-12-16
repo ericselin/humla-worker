@@ -12,31 +12,41 @@ const filterActions = (filterer: ActionFilter) =>
   };
 
 type RouteConfig = {
-  filter: ActionFilter;
+  filter?: ActionFilter;
+  searchFilter?: (searchTerm: string) => ActionFilter;
 };
 
 const routes: { [pathname: string]: RouteConfig } = {
-  "/unprocessed": {
+  "unprocessed": {
     filter: (action) => !action.date && !action.done,
   },
-  "/today": {
+  "today": {
     filter: (action) =>
       (!!action.date && action.date <= today()) ||
       action.done === today(),
   },
-  "/week": {
+  "week": {
     filter: (action) =>
       !!action.date &&
       (action.date >= thisMonday() && action.date <= sunday()),
   },
-  "/later": {
+  "later": {
     filter: (action) => !action.done && action.date === "later",
   },
-  "/someday": {
+  "someday": {
     filter: (action) => !action.done && action.date === "someday",
   },
-  "/all": {
+  "all": {
     filter: (action) => !action.done,
+  },
+  "contexts": {
+    searchFilter: (context) =>
+      (action) => !action.done && action.context === `@${context}`,
+  },
+  "tags": {
+    searchFilter: (tag) =>
+      (action) =>
+        !action.done && action.tags && action.tags.includes(`#${tag}`),
   },
 };
 
@@ -46,10 +56,16 @@ export const getPageHandler: PageHandler = (getActions) =>
 
     // default filter is no filter
     let filter: ActionFilter = () => true;
-    const route = routes[url.pathname];
+
+    // find route
+    const [, section, searchTerm] = url.pathname.split("/");
+    const route = routes[section];
     if (route) {
-      filter = route.filter;
+      if (route.filter) filter = route.filter;
+      if (route.searchFilter) filter = route.searchFilter(searchTerm);
     }
+
+    //
 
     const list = await Promise
       .resolve()

@@ -777,32 +777,40 @@ const getActionSaver = (getActions, saveActions1)=>async (input)=>{
     }
 ;
 const routes = {
-    "/unprocessed": {
+    "unprocessed": {
         filter: (action)=>!action.date && !action.done
     },
-    "/today": {
+    "today": {
         filter: (action)=>!!action.date && action.date <= today() || action.done === today()
     },
-    "/week": {
+    "week": {
         filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
     },
-    "/later": {
+    "later": {
         filter: (action)=>!action.done && action.date === "later"
     },
-    "/someday": {
+    "someday": {
         filter: (action)=>!action.done && action.date === "someday"
     },
-    "/all": {
+    "all": {
         filter: (action)=>!action.done
+    },
+    "contexts": {
+        searchFilter: (context)=>(action)=>!action.done && action.context === `@${context}`
+    },
+    "tags": {
+        searchFilter: (tag)=>(action)=>!action.done && action.tags && action.tags.includes(`#${tag}`)
     }
 };
 const getPageHandler = (getActions)=>async (request)=>{
         const url = new URL(request.url);
         let filter = ()=>true
         ;
-        const route = routes[url.pathname];
+        const [, section, searchTerm] = url.pathname.split("/");
+        const route = routes[section];
         if (route) {
-            filter = route.filter;
+            if (route.filter) filter = route.filter;
+            if (route.searchFilter) filter = route.searchFilter(searchTerm);
         }
         const list = await Promise.resolve().then(getActions).then(filterActions(filter)).then(groupBy("context"));
         const renderOptions = {
