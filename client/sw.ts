@@ -2,7 +2,7 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-import { getActionSaver } from "../lib/actions.ts";
+import { getActionSaver } from "../lib/save.ts";
 import { getMainHandler, getPageHandler, getSaveHandler } from "../lib/sw.ts";
 
 const listActions: ActionLister = async () => {

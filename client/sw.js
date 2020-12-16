@@ -1,52 +1,3 @@
-const pad = (nr)=>nr.toString().padStart(2, "0")
-;
-const format = (d)=>`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-;
-const formatDM = (d, m)=>`${new Date().getFullYear()}-${pad(m)}-${pad(d)}`
-;
-const sundayDate = ()=>{
-    const d = new Date();
-    d.setDate(d.getDate() + (7 - (d.getDay() || 7)));
-    return d;
-};
-const parseDate = (dateStr)=>{
-    switch(dateStr.toLowerCase()){
-        case "l":
-            return "later";
-        case "s":
-            return "someday";
-        case "today":
-        case "t":
-            return format(new Date());
-        case "tomorrow":
-        case "tm":
-            {
-                const d = new Date();
-                d.setDate(new Date().getDate() + 1);
-                return format(d);
-            }
-        case "this week":
-        case "tw":
-            return format(sundayDate());
-        case "next week":
-        case "nw":
-            {
-                const d = sundayDate();
-                d.setDate(d.getDate() + 7);
-                return format(d);
-            }
-        default:
-            {
-                const date = /^(\d{1,2})\.(\d{1,2})/;
-                const match = dateStr.match(date);
-                if (match) {
-                    const [, day, month] = match;
-                    return formatDM(day, month);
-                }
-                return dateStr;
-            }
-    }
-};
 const getTags = (body)=>{
     const regex = /(?:^|\s)(#\w+)/g;
     const matches = body.matchAll(regex);
@@ -68,17 +19,12 @@ const getDate = (dateParser)=>(body)=>{
     }
 ;
 const getTitle = (body)=>{
-    return body.split('\n')[0];
+    return body.split("\n")[0];
 };
-const renderPage = ({ list ,  })=>`\n<!DOCTYPE html>\n<html lang="en">\n\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Humla App - Simple but powerful todo manager</title>\n  <script src="/app.js"></script>\n</head>\n\n<body>\n  <h1>Humla App</h1>\n  <header>\n    <nav>\n      <h2>Dates</h2>\n      <ul>\n        <li><a href="/unprocessed">Unprocessed</a></li>\n        <li><a href="/today">Today</a></li>\n        <li><a href="/week">This Week</a></li>\n        <li><a href="/later">Later</a></li>\n        <li><a href="/someday">Someday</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    <h2>Todays actions</h2>\n    <ul>${list.map((group, ig)=>`\n      <li>\n        <h3>${group.heading}</h3>\n        <ul>${group.children.map((action, ia)=>`\n          <li>\n            <form method="post" action="/actions.json">\n              <input type="hidden" name="id" value="${action.id}">\n              <details>\n                  <summary>\n                    <input type="checkbox" name="done"${action.done ? " checked" : ""}>\n                    ${action.title}\n                    ${action.tags.map((tag)=>`<i>${tag}</i>`
-            ).join(" ")} \n                    ${action.date ? `<strong><time>${action.date}</time></strong>` : ""}\n                  </summary>\n                  <textarea name="body" cols="50" rows="5">${action.body}</textarea>\n                  <input type="submit" value="Save"/>\n              </details>\n            </form>\n          </li>`
-        ).join("")}\n        </ul>\n      </li>`
-    ).join("")}\n    </ul>\n  </main>\n  <aside>\n    <form method="post" action="/actions.json">\n      <h2>Add new action</h2>\n      <p>\n        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your\n        actions.\n      </p>\n      <p>\n        New actions will go under <i>Unprocessed</i> unless you set a date for them.\n        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.\n      </p>\n      <textarea name="body" cols="50" rows="5"></textarea>\n      <input type="submit" value="Create"/>\n    </form>\n  </aside>\n  <footer>\n    <nav>\n      <h2>Contexts</h2>\n      <ul>\n        <li><a href="/contexts/brf">@brf</a></li>\n        <li><a href="/contexts/personal">@personal</a></li>\n        <li><a href="/contexts/work">@work</a></li>\n      </ul>\n      <h2>Tags</h2>\n      <ul>\n        <li><a href="/tags/home">#home</a></li>\n        <li><a href="/tags/errands">#errands</a></li>\n        <li><a href="/tags/knackis">#knackis</a></li>\n        <li><a href="/tags/bank">#bank</a></li>\n        <li><a href="/tags/mini">#mini</a></li>\n      </ul>\n    </nav>\n  </footer>\n</body>\n\n</html>\n`
-;
 const groupBy = (field)=>(actions)=>{
         if (field !== "context") throw new Error("Not implemented");
         const groupMap = actions.reduce((map, action)=>{
-            const context = action.context || "No context";
+            const context = action.done ? "Completed" : action.context || "No context";
             if (!map[context]) {
                 map[context] = {
                     heading: context,
@@ -92,15 +38,13 @@ const groupBy = (field)=>(actions)=>{
         return Object.values(groupMap);
     }
 ;
-const getPageHandler = (getActions)=>async (request)=>{
-        const list = await Promise.resolve().then(getActions).then(groupBy("context"));
-        return new Response(renderPage({
-            list
-        }), {
-            headers: {
-                "Content-Type": "text/html"
-            }
-        });
+const renderPage = ({ list , autofocus ,  })=>`\n<!DOCTYPE html>\n<html lang="en">\n\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Humla App - Simple but powerful todo manager</title>\n  <script src="/app.js"></script>\n</head>\n\n<body>\n  <h1>Humla App</h1>\n  <header>\n    <nav>\n      <h2>Dates</h2>\n      <ul>\n        <li><a href="/unprocessed">Unprocessed</a></li>\n        <li><a href="/today">Today</a></li>\n        <li><a href="/week">This Week</a></li>\n        <li><a href="/later">Later</a></li>\n        <li><a href="/someday">Someday</a></li>\n        <li><a href="/all">All</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    <h2>Todays actions</h2>\n    <ul>${list.map((group, ig)=>`\n      <li>\n        <h3>${group.heading}</h3>\n        <ul>${group.children.map((action, ia)=>`\n          <li>\n            <form method="post" action="/actions.json">\n              <input type="hidden" name="id" value="${action.id}">\n              <details>\n                  <summary>\n                    <input type="checkbox" name="done"${action.done ? " checked" : ""}>\n                    ${action.title}\n                    ${action.tags.map((tag)=>`<i>${tag}</i>`
+            ).join(" ")} \n                    ${action.date ? `<strong><time>${action.date}</time></strong>` : ""}\n                  </summary>\n                  <textarea name="body" cols="50" rows="5">${action.body}</textarea>\n                  <input type="submit" value="Save"/>\n              </details>\n            </form>\n          </li>`
+        ).join("")}\n        </ul>\n      </li>`
+    ).join("")}\n    </ul>\n  </main>\n  <aside>\n    <form method="post" action="/actions.json">\n      <h2>Add new action</h2>\n      <p>\n        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your\n        actions.\n      </p>\n      <p>\n        New actions will go under <i>Unprocessed</i> unless you set a date for them.\n        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.\n      </p>\n      <textarea name="body" cols="50" rows="5"${autofocus === "add" ? " autofocus" : ""}></textarea>\n      <input type="submit" value="Create"/>\n    </form>\n  </aside>\n  <footer>\n    <nav>\n      <h2>Contexts</h2>\n      <ul>\n        <li><a href="/contexts/brf">@brf</a></li>\n        <li><a href="/contexts/personal">@personal</a></li>\n        <li><a href="/contexts/work">@work</a></li>\n      </ul>\n      <h2>Tags</h2>\n      <ul>\n        <li><a href="/tags/home">#home</a></li>\n        <li><a href="/tags/errands">#errands</a></li>\n        <li><a href="/tags/knackis">#knackis</a></li>\n        <li><a href="/tags/bank">#bank</a></li>\n        <li><a href="/tags/mini">#mini</a></li>\n      </ul>\n    </nav>\n  </footer>\n</body>\n\n</html>\n`
+;
+const filterActions = (filterer)=>(actions)=>{
+        return actions.filter(filterer);
     }
 ;
 const getSaveHandler = (saveAction)=>async (request)=>{
@@ -122,10 +66,12 @@ const getSaveHandler = (saveAction)=>async (request)=>{
             done,
             body
         });
-        return new Response(`Redirecting to ${request.referrer}`, {
+        let redirect = request.referrer;
+        if (!id) redirect += "?focus=add";
+        return new Response(`Redirecting to ${redirect}`, {
             status: 302,
             headers: {
-                "Location": request.referrer
+                "Location": redirect
             }
         });
     }
@@ -168,6 +114,64 @@ const populateCache = async ()=>{
 self.addEventListener("install", (event)=>{
     event.waitUntil(populateCache());
 });
+const pad = (nr)=>nr.toString().padStart(2, "0")
+;
+const format = (d)=>`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+;
+const formatDM = (d, m)=>`${new Date().getFullYear()}-${pad(m)}-${pad(d)}`
+;
+const sundayDate = ()=>{
+    const d = new Date();
+    d.setDate(d.getDate() + (7 - (d.getDay() || 7)));
+    return d;
+};
+const today = ()=>format(new Date())
+;
+const sunday = ()=>format(sundayDate())
+;
+const thisMonday = ()=>{
+    const d = sundayDate();
+    d.setDate(d.getDate() - 6);
+    return format(d);
+};
+const parseDate = (dateStr)=>{
+    switch(dateStr.toLowerCase()){
+        case "l":
+            return "later";
+        case "s":
+            return "someday";
+        case "today":
+        case "t":
+            return format(new Date());
+        case "tomorrow":
+        case "tm":
+            {
+                const d = new Date();
+                d.setDate(new Date().getDate() + 1);
+                return format(d);
+            }
+        case "this week":
+        case "tw":
+            return format(sundayDate());
+        case "next week":
+        case "nw":
+            {
+                const d = sundayDate();
+                d.setDate(d.getDate() + 7);
+                return format(d);
+            }
+        default:
+            {
+                const date = /^(\d{1,2})\.(\d{1,2})/;
+                const match = dateStr.match(date);
+                if (match) {
+                    const [, day, month] = match;
+                    return formatDM(day, month);
+                }
+                return dateStr;
+            }
+    }
+};
 function bytesToUuid(bytes) {
     const bits = [
         ...bytes
@@ -755,7 +759,7 @@ const processActionInput = (input)=>{
         date: getDate(parseDate)(input.body),
         tags: getTags(input.body)
     };
-    if (input.done) action.done = true;
+    if (input.done) action.done = today();
     return action;
 };
 const getActionSaver = (getActions, saveActions1)=>async (input)=>{
@@ -770,6 +774,46 @@ const getActionSaver = (getActions, saveActions1)=>async (input)=>{
         }
         console.log("saving", action, actions);
         return saveActions1(actions);
+    }
+;
+const routes = {
+    "/unprocessed": {
+        filter: (action)=>!action.date && !action.done
+    },
+    "/today": {
+        filter: (action)=>!!action.date && action.date <= today() || action.done === today()
+    },
+    "/week": {
+        filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
+    },
+    "/later": {
+        filter: (action)=>action.date === "later"
+    },
+    "/someday": {
+        filter: (action)=>action.date === "someday"
+    }
+};
+const getPageHandler = (getActions)=>async (request)=>{
+        const url = new URL(request.url);
+        let filter = ()=>true
+        ;
+        const route = routes[url.pathname];
+        if (route) {
+            filter = route.filter;
+        }
+        const list = await Promise.resolve().then(getActions).then(filterActions(filter)).then(groupBy("context"));
+        const renderOptions = {
+            list
+        };
+        const focus = url.searchParams.get("focus");
+        if (focus) {
+            renderOptions.autofocus = focus;
+        }
+        return new Response(renderPage(renderOptions), {
+            headers: {
+                "Content-Type": "text/html"
+            }
+        });
     }
 ;
 const handleRequest = getMainHandler({

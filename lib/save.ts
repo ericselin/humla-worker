@@ -1,6 +1,6 @@
 /// <reference path="../domain.d.ts" />
 
-import { DateParser, parseDate } from "./dates.ts";
+import { DateParser, parseDate, today } from "./dates.ts";
 import { uuid } from "./deps.ts";
 
 export const getTags = (body: string): string[] => {
@@ -27,7 +27,7 @@ export const getDate = (dateParser: DateParser) =>
   };
 
 export const getTitle = (body: string): string => {
-  return body.split('\n')[0];
+  return body.split("\n")[0];
 };
 
 export const processActionInput = (input: ActionInput): Action => {
@@ -39,7 +39,7 @@ export const processActionInput = (input: ActionInput): Action => {
     date: getDate(parseDate)(input.body),
     tags: getTags(input.body),
   };
-  if (input.done) action.done = true;
+  if (input.done) action.done = today();
   return action;
 };
 

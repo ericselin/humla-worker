@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.81.0/testing/asserts.ts";
-import { getContext, getDate, getTags, getTitle } from "./actions.ts";
+import { getContext, getDate, getTags, getTitle } from "./save.ts";
 
 Deno.test("gets context", () => {
   assertEquals(getContext("this-a time it's @personal"), "@personal");

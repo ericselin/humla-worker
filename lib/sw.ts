@@ -1,33 +1,71 @@
 /// <reference path="../domain.d.ts" />
 
-import { renderPage } from "./page.ts";
+import { sunday, thisMonday, today } from "./dates.ts";
+import { groupBy } from "./list.ts";
+import { PageRendererOptions, renderPage } from "./page.ts";
 
-const groupBy = <K extends keyof Action>(field: K) =>
-  (actions: Action[]): ActionGroup[] => {
-    if (field !== "context") throw new Error("Not implemented");
-    const groupMap = actions.reduce((map, action) => {
-      const context = action.context || "No context";
-      if (!map[context]) {
-        map[context] = {
-          heading: context,
-          children: [],
-        };
-      }
-      map[context].children.push(action);
-      return map;
-    }, {} as { [context: string]: ActionGroup });
-    return Object.values(groupMap);
+type ActionFilter = (action: Action) => boolean;
+
+const filterActions = (filterer: ActionFilter) =>
+  (actions: Action[]) => {
+    return actions.filter(filterer);
   };
+
+type RouteConfig = {
+  filter: ActionFilter;
+};
+
+const routes: { [pathname: string]: RouteConfig } = {
+  "/unprocessed": {
+    filter: (action) => !action.date && !action.done,
+  },
+  "/today": {
+    filter: (action) =>
+      (!!action.date && action.date <= today()) ||
+      action.done === today(),
+  },
+  "/week": {
+    filter: (action) =>
+      !!action.date &&
+      (action.date >= thisMonday() && action.date <= sunday()),
+  },
+  "/later": {
+    filter: (action) => action.date === "later",
+  },
+  "/someday": {
+    filter: (action) => action.date === "someday",
+  },
+};
 
 export const getPageHandler: PageHandler = (getActions) =>
   async (request) => {
+    const url = new URL(request.url);
+
+    // default filter is no filter
+    let filter: ActionFilter = () => true;
+    const route = routes[url.pathname];
+    if (route) {
+      filter = route.filter;
+    }
+
     const list = await Promise
       .resolve()
       .then(getActions)
+      .then(filterActions(filter))
       .then(groupBy("context"));
 
+    const renderOptions: PageRendererOptions = {
+      list,
+    };
+
+    // add autofocus from hash
+    const focus = url.searchParams.get("focus");
+    if (focus) {
+      renderOptions.autofocus = focus;
+    }
+
     return new Response(
-      renderPage({ list }),
+      renderPage(renderOptions),
       {
         headers: {
           "Content-Type": "text/html",
@@ -56,9 +94,12 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
       done,
       body,
     });
+    let redirect = request.referrer;
+    // if this was an add, re-focus the add textarea
+    if (!id) redirect += "?focus=add";
     return new Response(
-      `Redirecting to ${request.referrer}`,
-      { status: 302, headers: { "Location": request.referrer } },
+      `Redirecting to ${redirect}`,
+      { status: 302, headers: { "Location": redirect } },
     );
   };
 

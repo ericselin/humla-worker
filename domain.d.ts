@@ -9,7 +9,7 @@ type Action = {
   date?: string;
   context?: string;
   body: string;
-  done?: boolean;
+  done?: string;
 };
 
 type ActionGroup = {

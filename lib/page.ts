@@ -1,11 +1,15 @@
 /// <reference path="../domain.d.ts" />
 
-type PageRenderer = (options: {
+export type PageRendererOptions = {
   list: ActionGroup[];
-}) => string;
+  autofocus?: ID | "add";
+};
+
+type PageRenderer = (options: PageRendererOptions) => string;
 
 export const renderPage: PageRenderer = ({
   list,
+  autofocus,
 }) =>
   `
 <!DOCTYPE html>
@@ -29,6 +33,7 @@ export const renderPage: PageRenderer = ({
         <li><a href="/week">This Week</a></li>
         <li><a href="/later">Later</a></li>
         <li><a href="/someday">Someday</a></li>
+        <li><a href="/all">All</a></li>
       </ul>
     </nav>
   </header>
@@ -80,7 +85,9 @@ export const renderPage: PageRenderer = ({
         New actions will go under <i>Unprocessed</i> unless you set a date for them.
         Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.
       </p>
-      <textarea name="body" cols="50" rows="5"></textarea>
+      <textarea name="body" cols="50" rows="5"${
+    autofocus === "add" ? " autofocus" : ""
+  }></textarea>
       <input type="submit" value="Create"/>
     </form>
   </aside>
