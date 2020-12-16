@@ -19,7 +19,9 @@ export const groupBy = <K extends keyof Action>(field: K) =>
     return Object.values(groupMap);
   };
 
-export const linkList = <K extends keyof Action>(field: K) =>
+export const linkList = <K extends keyof Pick<Action, "context" | "tags">>(
+  field: K,
+) =>
   (actions: Action[]): Link[] =>
     actions
       .flatMap((a) => a[field] as string | string[])

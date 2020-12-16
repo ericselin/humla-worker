@@ -14,7 +14,7 @@ type Action = {
 
 type ActionGroup = {
   heading: string;
-  children: Action[];
+  children: (Action | ActionGroup)[];
 };
 
 type ActionInput = {
@@ -55,7 +55,7 @@ type Link = {
 };
 
 type PageRendererOptions = {
-  list: ActionGroup[];
+  list: ActionGroup;
   tags: Link[];
   contexts: Link[];
   autofocus?: ID | "add";

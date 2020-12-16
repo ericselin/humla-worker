@@ -12,38 +12,47 @@ const filterActions = (filterer: ActionFilter) =>
   };
 
 type RouteConfig = {
+  heading: string;
   filter?: ActionFilter;
   searchFilter?: (searchTerm: string) => ActionFilter;
 };
 
 const routes: { [pathname: string]: RouteConfig } = {
   "unprocessed": {
+    heading: "Unprocessed",
     filter: (action) => !action.date && !action.done,
   },
   "today": {
+    heading: "Today",
     filter: (action) =>
       (!!action.date && action.date <= today()) ||
       action.done === today(),
   },
   "week": {
+    heading: "This week",
     filter: (action) =>
       !!action.date &&
       (action.date >= thisMonday() && action.date <= sunday()),
   },
   "later": {
+    heading: "Later",
     filter: (action) => !action.done && action.date === "later",
   },
   "someday": {
+    heading: "Someday",
     filter: (action) => !action.done && action.date === "someday",
   },
   "all": {
+    heading: "All",
     filter: (action) => !action.done,
   },
   "contexts": {
+    heading: "Contexts",
     searchFilter: (context) =>
       (action) => !action.done && action.context === `@${context}`,
   },
   "tags": {
+    heading: "Tags",
     searchFilter: (tag) =>
       (action) =>
         !action.done && action.tags && action.tags.includes(`#${tag}`),
@@ -56,26 +65,31 @@ export const getPageHandler: PageHandler = (getActions) =>
 
     // default filter is no filter
     let filter: ActionFilter = () => true;
+    let heading = "Actions";
 
     // find route
     const [, section, searchTerm] = url.pathname.split("/");
     const route = routes[section];
     if (route) {
+      heading = route.heading;
       if (route.filter) filter = route.filter;
       if (route.searchFilter) filter = route.searchFilter(searchTerm);
     }
 
     const allActions = await getActions();
-    const list = await Promise
+    const actionGroup = await Promise
       .resolve(allActions)
       .then(filterActions(filter))
       .then(groupBy("context"));
 
-    const contexts = linkList('context')(allActions);
-    const tags = linkList('tags')(allActions);
+    const contexts = linkList("context")(allActions);
+    const tags = linkList("tags")(allActions);
 
     const renderOptions: PageRendererOptions = {
-      list,
+      list: {
+        heading,
+        children: actionGroup,
+      },
       contexts,
       tags,
     };
