@@ -1,15 +1,12 @@
 /// <reference path="../domain.d.ts" />
 
-export type PageRendererOptions = {
-  list: ActionGroup[];
-  autofocus?: ID | "add";
-};
-
 type PageRenderer = (options: PageRendererOptions) => string;
 
 export const renderPage: PageRenderer = ({
   list,
   autofocus,
+  contexts,
+  tags,
 }) =>
   `
 <!DOCTYPE html>
@@ -94,18 +91,12 @@ export const renderPage: PageRenderer = ({
   <footer>
     <nav>
       <h2>Contexts</h2>
-      <ul>
-        <li><a href="/contexts/brf">@brf</a></li>
-        <li><a href="/contexts/personal">@personal</a></li>
-        <li><a href="/contexts/work">@work</a></li>
+      <ul>${contexts.map(link => `
+        <li><a href="${link.url}">${link.text}</a></li>`).join('')}
       </ul>
       <h2>Tags</h2>
-      <ul>
-        <li><a href="/tags/home">#home</a></li>
-        <li><a href="/tags/errands">#errands</a></li>
-        <li><a href="/tags/knackis">#knackis</a></li>
-        <li><a href="/tags/bank">#bank</a></li>
-        <li><a href="/tags/mini">#mini</a></li>
+      <ul>${tags.map(link => `
+        <li><a href="${link.url}">${link.text}</a></li>`).join('')}
       </ul>
     </nav>
   </footer>

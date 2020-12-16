@@ -1,8 +1,8 @@
 /// <reference path="../domain.d.ts" />
 
 import { sunday, thisMonday, today } from "./dates.ts";
-import { groupBy } from "./list.ts";
-import { PageRendererOptions, renderPage } from "./page.ts";
+import { groupBy, linkList } from "./list.ts";
+import { renderPage } from "./page.ts";
 
 type ActionFilter = (action: Action) => boolean;
 
@@ -65,16 +65,19 @@ export const getPageHandler: PageHandler = (getActions) =>
       if (route.searchFilter) filter = route.searchFilter(searchTerm);
     }
 
-    //
-
+    const allActions = await getActions();
     const list = await Promise
-      .resolve()
-      .then(getActions)
+      .resolve(allActions)
       .then(filterActions(filter))
       .then(groupBy("context"));
 
+    const contexts = linkList('context')(allActions);
+    const tags = linkList('tags')(allActions);
+
     const renderOptions: PageRendererOptions = {
       list,
+      contexts,
+      tags,
     };
 
     // add autofocus from hash

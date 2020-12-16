@@ -16,3 +16,13 @@ export const groupBy = <K extends keyof Action>(field: K) =>
     }, {} as { [context: string]: ActionGroup });
     return Object.values(groupMap);
   };
+
+export const linkList = <K extends keyof Action>(field: K) =>
+  (actions: Action[]): Link[] =>
+    actions
+      .flatMap((a) => a[field] as string | string[])
+      .filter((elem, idx, arr) => elem && arr.indexOf(elem) === idx)
+      .map((elem) => ({
+        url: `/${field}${field.endsWith("s") ? "" : "s"}/${elem?.substring(1)}`,
+        text: elem,
+      }));

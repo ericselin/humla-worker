@@ -48,3 +48,15 @@ type MainHandlerDependencies = {
 type MainHandler = (
   dependencies: MainHandlerDependencies,
 ) => ResponseHandler;
+
+type Link = {
+  url: string;
+  text: string;
+};
+
+type PageRendererOptions = {
+  list: ActionGroup[];
+  tags: Link[];
+  contexts: Link[];
+  autofocus?: ID | "add";
+};
