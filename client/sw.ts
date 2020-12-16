@@ -31,11 +31,17 @@ self.addEventListener("fetch", (event) => {
 });
 
 const populateCache = async () => {
-  const cache = await caches.open("v1");
-  return cache.addAll([
+  const assets = [
     "/app.js",
-    "actions.json",
-  ]);
+  ];
+  const cache = await caches.open("v1");
+  const actions = await cache.match("/actions.json");
+  if (actions) {
+    console.log("We already have some actions:", actions);
+  } else {
+    assets.push("/actions.json");
+  }
+  return cache.addAll(assets);
 };
 
 self.addEventListener("install", (event) => {

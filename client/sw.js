@@ -153,11 +153,17 @@ const handleAssetRequest = async (request)=>{
     return await caches.match(request) || fetch(request);
 };
 const populateCache = async ()=>{
+    const assets = [
+        "/app.js", 
+    ];
     const cache = await caches.open("v1");
-    return cache.addAll([
-        "/app.js",
-        "actions.json", 
-    ]);
+    const actions = await cache.match("/actions.json");
+    if (actions) {
+        console.log("We already have some actions:", actions);
+    } else {
+        assets.push("/actions.json");
+    }
+    return cache.addAll(assets);
 };
 self.addEventListener("install", (event)=>{
     event.waitUntil(populateCache());
