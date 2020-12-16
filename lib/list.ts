@@ -24,6 +24,7 @@ export const linkList = <K extends keyof Pick<Action, "context" | "tags">>(
 ) =>
   (actions: Action[]): Link[] =>
     actions
+      .filter((a) => !a.done)
       .flatMap((a) => a[field] as string | string[])
       .filter((elem, idx, arr) => elem && arr.indexOf(elem) === idx)
       .map((elem) => ({

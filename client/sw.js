@@ -38,7 +38,8 @@ const groupBy = (field)=>(actions)=>{
         return Object.values(groupMap);
     }
 ;
-const linkList = (field)=>(actions)=>actions.flatMap((a)=>a[field]
+const linkList = (field)=>(actions)=>actions.filter((a)=>!a.done
+        ).flatMap((a)=>a[field]
         ).filter((elem, idx, arr)=>elem && arr.indexOf(elem) === idx
         ).map((elem)=>({
                 url: `/${field}${field.endsWith("s") ? "" : "s"}/${elem?.substring(1)}`,
