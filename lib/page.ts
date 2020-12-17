@@ -4,21 +4,21 @@ type PageRenderer = (options: PageRendererOptions) => string;
 
 const renderGroup = (group: ActionGroup, headingLevel: number) =>
   `
-<h${headingLevel}>${group.heading}</h${headingLevel}>
-${
+<h${headingLevel}>${group.heading}</h${headingLevel}>${
     group.children.length
-      ? `<ul>
-  ${
+      ? `
+  <ul>${
         group.children.map(
-          (item) => `<li>${renderItem(item, headingLevel + 1)}</li>`,
+          (item) =>
+            `
+    <li>${renderItem(item, headingLevel + 1)}
+    </li>`,
         ).join("")
       }
-</ul>
-`
+  </ul>`
       : `
-🥳
-<p>No actions here, yay!</p>
-`
+  🥳
+  <p>No actions here, yay!</p>`
   }`;
 
 const renderAction = (action: Action) =>
@@ -40,6 +40,18 @@ const renderAction = (action: Action) =>
 
 const renderItem = (item: ActionGroup | Action, headingLevel: number): string =>
   "heading" in item ? renderGroup(item, headingLevel) : renderAction(item);
+
+const renderLinkList = (links: Link[], placeholder = "\n") =>
+  links.length
+    ? `
+<ul>${
+      links.map((link) =>
+        `
+  <li><a href="${link.url}">${link.text}</a></li>`
+      ).join("")
+    }
+</ul>`
+    : placeholder;
 
 export const renderPage: PageRenderer = ({
   list,
@@ -95,34 +107,26 @@ export const renderPage: PageRenderer = ({
   </aside>
   <footer>
     <nav>
-      <h2>Contexts</h2>${contexts.length ? `
-      <ul>${
-        contexts.map((link) =>
-        `
-        <li><a href="${link.url}">${link.text}</a></li>`
-        ).join("")
-      }
-      </ul>
-`:`
+      <h2>Contexts</h2>${
+    renderLinkList(
+      contexts,
+      `
       <p>
         No contexts found<br>
         Contexts start with an at-sign: <code>@context</code>
-      </p>
-`}
-      <h2>Tags</h2>${tags.length ? `
-      <ul>${
-    tags.map((link) =>
-      `
-        <li><a href="${link.url}">${link.text}</a></li>`
-    ).join("")
+      </p>`,
+    )
   }
-      </ul>
-` : `
+      <h2>Tags</h2>${
+    renderLinkList(
+      tags,
+      `
       <p>
         No tags found<br>
         Tags have the familiar hashtag format: <code>#tag</code>
-      </p>
-`}
+      </p>`,
+    )
+  }
     </nav>
   </footer>
 </body>
