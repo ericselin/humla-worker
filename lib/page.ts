@@ -5,14 +5,21 @@ type PageRenderer = (options: PageRendererOptions) => string;
 const renderGroup = (group: ActionGroup, headingLevel: number) =>
   `
 <h${headingLevel}>${group.heading}</h${headingLevel}>
-<ul>
 ${
-    group.children.map(
-      (item) => `<li>${renderItem(item, headingLevel + 1)}</li>`,
-    ).join("")
-  }
+    group.children.length
+      ? `<ul>
+  ${
+        group.children.map(
+          (item) => `<li>${renderItem(item, headingLevel + 1)}</li>`,
+        ).join("")
+      }
 </ul>
-`;
+`
+      : `
+🥳
+<p>No actions here, yay!</p>
+`
+  }`;
 
 const renderAction = (action: Action) =>
   `
@@ -88,15 +95,21 @@ export const renderPage: PageRenderer = ({
   </aside>
   <footer>
     <nav>
-      <h2>Contexts</h2>
+      <h2>Contexts</h2>${contexts.length ? `
       <ul>${
-    contexts.map((link) =>
-      `
+        contexts.map((link) =>
+        `
         <li><a href="${link.url}">${link.text}</a></li>`
-    ).join("")
-  }
+        ).join("")
+      }
       </ul>
-      <h2>Tags</h2>
+`:`
+      <p>
+        No contexts found<br>
+        Contexts start with an at-sign: <code>@context</code>
+      </p>
+`}
+      <h2>Tags</h2>${tags.length ? `
       <ul>${
     tags.map((link) =>
       `
@@ -104,6 +117,12 @@ export const renderPage: PageRenderer = ({
     ).join("")
   }
       </ul>
+` : `
+      <p>
+        No tags found<br>
+        Tags have the familiar hashtag format: <code>#tag</code>
+      </p>
+`}
     </nav>
   </footer>
 </body>
