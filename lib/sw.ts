@@ -25,7 +25,7 @@ const routes: { [pathname: string]: RouteConfig } = {
   "today": {
     heading: "Today",
     filter: (action) =>
-      (!!action.date && action.date <= today()) ||
+      (!!action.date && action.date <= today() && !action.done) ||
       action.done === today(),
   },
   "week": {
