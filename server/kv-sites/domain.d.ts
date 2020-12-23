@@ -7,9 +7,9 @@ type UploadFile = {
 };
 
 type CloudflareAPIKVOptions = {
-  namespace: string;
   account: string;
   token: string;
+  namespace: string;
 };
 
 type CloudflareAPIKVWriteParams = {
@@ -27,7 +27,7 @@ type UploadsGetter = (publishDir: string) => Promise<UploadFile[]>;
 
 type UploadResult = CloudflareAPIResponse;
 
-type Uploader = (
+type KVUploader = (
   cloudflareOptions: CloudflareAPIKVOptions,
   publishDir: string,
 ) => Promise<UploadResult>;

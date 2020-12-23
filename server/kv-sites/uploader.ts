@@ -1,6 +1,7 @@
 /// <reference path="./domain.d.ts" />
 
 import { map } from "../fn.ts";
+import { getUploads } from "./filesystem.ts";
 
 const uploadToKVWriterParams = (
   upload: UploadFile,
@@ -33,10 +34,6 @@ export const getKVWriter = (opts: CloudflareAPIKVOptions) =>
     return response.json();
   };
 
-export const getUploads: UploadsGetter = async (publishDir: string) => {
-  throw new Error("Not implemented");
-};
-
 export const logFailedResponse = (
   cloudflareResponse: CloudflareAPIResponse,
 ): void => {
@@ -45,7 +42,7 @@ export const logFailedResponse = (
   }
 };
 
-export const getUploader: Uploader = async (cfOpts, publishDir) => {
+export const uploadDirToKV: KVUploader = async (cfOpts, publishDir) => {
   const writeToKV = getKVWriter(cfOpts);
   return Promise
     .resolve(publishDir)
