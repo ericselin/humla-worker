@@ -1,0 +1,10 @@
+name = "humla"
+type = "javascript"
+account_id = "a5407b781bec5a58294d3dcaa2c18806"
+workers_dev = true
+route = ""
+zone_id = ""
+
+kv_namespaces = [
+  { binding = "ASSETS", id = "5708240827844761a93e82f00abec273" },
+]

@@ -1,4 +1,4 @@
-type AssetRequestHandler = (request: Request) => Promise<Response | undefined>;
+type AssetRequestHandler = (request: Request) => Promise<Response>;
 
 type UploadFile = {
   filePath: string;
