@@ -140,14 +140,20 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
   };
 
 export const getMainHandler: MainHandler = (
-  { handleAsset, handlePage, handleSave },
+  { handleAsset, handlePage, handleSave, handleRoutes },
 ) =>
   async (request) => {
     const url = new URL(request.url);
 
+    if (handleRoutes && handleRoutes[url.pathname]) {
+      return handleRoutes[url.pathname](request);
+    }
+
     if (request.method === "GET" && !url.pathname.includes(".")) {
       return handlePage(request);
-    } else if (request.method === "POST") {
+    }
+
+    if (request.method === "POST") {
       return handleSave(request);
     }
 

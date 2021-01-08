@@ -43,6 +43,10 @@ type MainHandlerDependencies = {
   handlePage: ResponseHandler;
   handleSave: ResponseHandler;
   handleAsset: ResponseHandler;
+  // this is needed in order to implement a server-side oauth endpoint
+  handleRoutes?: {
+    [urlPath: string]: ResponseHandler;
+  };
 };
 
 type MainHandler = (
