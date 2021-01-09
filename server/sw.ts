@@ -10,11 +10,11 @@ const listActions: ActionLister = async () => {
   return [];
 };
 
-const saveActions = async (actions: Action[]): Promise<void> => {
+const saveActions: ActionPersister = async (actions) => {
   throw new Error("Not implemented");
 };
 
-const handleAssetRequest: ResponseHandler = getAssetFromKV;
+const handleAssetRequest: RequestHandler = getAssetFromKV;
 
 const handleRequest = getMainHandler({
   handlePage: getPageHandler(listActions),

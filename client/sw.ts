@@ -11,12 +11,12 @@ const listActions: ActionLister = async () => {
   return response?.json();
 };
 
-const saveActions = async (actions: Action[]): Promise<void> => {
+const saveActions: ActionPersister = async (actions) => {
   const cache = await caches.open("v1");
   return cache.put("/actions.json", new Response(JSON.stringify(actions)));
 };
 
-const handleAssetRequest: ResponseHandler = async (request) => {
+const handleAssetRequest: RequestHandler = async (request) => {
   return await caches.match(request) || fetch(request);
 };
 

@@ -31,27 +31,27 @@ type ActionSaverGetter = (
   saveActions: ActionPersister,
 ) => ActionSaver;
 
-type ResponseHandler = (
+type RequestHandler = (
   request: Request,
 ) => Promise<Response> | Response;
 
-type PageHandler = (getActions: ActionLister) => ResponseHandler;
-type SaveHandler = (saveAction: ActionSaver) => ResponseHandler;
-type AssetHandler = (cache: Cache) => ResponseHandler;
+type PageHandler = (getActions: ActionLister) => RequestHandler;
+type SaveHandler = (saveAction: ActionSaver) => RequestHandler;
+type AssetHandler = (cache: Cache) => RequestHandler;
 
 type MainHandlerDependencies = {
-  handlePage: ResponseHandler;
-  handleSave: ResponseHandler;
-  handleAsset: ResponseHandler;
+  handlePage: RequestHandler;
+  handleSave: RequestHandler;
+  handleAsset: RequestHandler;
   // this is needed in order to implement a server-side oauth endpoint
   handleRoutes?: {
-    [urlPath: string]: ResponseHandler;
+    [urlPath: string]: RequestHandler;
   };
 };
 
 type MainHandler = (
   dependencies: MainHandlerDependencies,
-) => ResponseHandler;
+) => RequestHandler;
 
 type Link = {
   url: string;
