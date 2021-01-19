@@ -76,7 +76,7 @@ export const getPageHandler: PageHandler = (getActions) =>
       if (route.searchFilter) filter = route.searchFilter(searchTerm);
     }
 
-    const allActions = await getActions();
+    const allActions = await getActions(request);
     const actionGroup = await Promise
       .resolve(allActions)
       .then(filterActions(filter))
@@ -129,7 +129,7 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
       id,
       done,
       body,
-    });
+    }, request);
     let redirect = request.referrer;
     // if this was an add, re-focus the add textarea
     if (!id) redirect += "?focus=add";

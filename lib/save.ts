@@ -44,9 +44,9 @@ export const processActionInput = (input: ActionInput): Action => {
 };
 
 export const getActionSaver: ActionSaverGetter = (getActions, saveActions) =>
-  async (input) => {
+  async (input, request) => {
     const action = processActionInput(input);
-    const actions = await getActions();
+    const actions = await getActions(request);
     const index = actions.findIndex((a) => a.id === action.id);
     if (~index) {
       actions[index] = action;
@@ -54,5 +54,5 @@ export const getActionSaver: ActionSaverGetter = (getActions, saveActions) =>
       actions.push(action);
     }
     console.log("saving", action, actions);
-    return saveActions(actions);
+    return saveActions(actions, request);
   };

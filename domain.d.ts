@@ -23,9 +23,9 @@ type ActionInput = {
   done?: string | null;
 };
 
-type ActionLister = () => Promise<Action[]>;
-type ActionPersister = (actions: Action[]) => Promise<void>;
-type ActionSaver = (input: ActionInput) => Promise<void>;
+type ActionLister = (request: Request) => Promise<Action[]>;
+type ActionPersister = (actions: Action[], request: Request) => Promise<void>;
+type ActionSaver = (input: ActionInput, request: Request) => Promise<void>;
 type ActionSaverGetter = (
   getActions: ActionLister,
   saveActions: ActionPersister,

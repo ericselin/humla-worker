@@ -6,11 +6,17 @@ import { getActionSaver } from "../lib/save.ts";
 import { getMainHandler, getPageHandler, getSaveHandler } from "../lib/sw.ts";
 import { getAssetFromKV } from "./kv-sites/mod.ts";
 
-const listActions: ActionLister = async () => {
+const listActions: ActionLister = async (request) => {
+  // get user id from response
+  // return empty array if no user logged in
+  // return user todos from 'humla-actions' kv namespace
   return [];
 };
 
 const saveActions: ActionPersister = async (actions) => {
+  // get user id from response
+  // return some useful http status if failed
+  // save user todos to kv namespace
   throw new Error("Not implemented");
 };
 
