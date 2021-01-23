@@ -21,3 +21,20 @@ export const log = (description: string, logValue: boolean = true) =>
     if (logValue) console.log(input);
     return input;
   };
+
+export const ifEquals = (
+  condition: unknown,
+  ifValueOrFn: unknown,
+  elseValueOrFn: unknown,
+) =>
+  (input: unknown) => {
+    if (input === condition) {
+      return typeof ifValueOrFn === "function"
+        ? ifValueOrFn(input)
+        : ifValueOrFn;
+    } else {
+      return typeof elseValueOrFn === "function"
+        ? elseValueOrFn(input)
+        : elseValueOrFn;
+    }
+  };
