@@ -1,6 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.81.0/testing/asserts.ts";
 import { FakeTime } from "https://deno.land/x/mock@v0.9.4/time.ts";
-import { getUserId } from "./auth.ts";
+import { getUserIdGetter } from "./auth.ts";
 
 const token =
   "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijc4M2VjMDMxYzU5ZTExZjI1N2QwZWMxNTcxNGVmNjA3Y2U2YTJhNmYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI0MDc0MDg3MTgxOTIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI0MDc0MDg3MTgxOTIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTM1MjA3Nzg0MzU3NDMxNzIwNzgiLCJhdF9oYXNoIjoiYWpZT291TWNJVmZoSUF0MzRwMURzdyIsImlhdCI6MTYxMTA4OTM4OCwiZXhwIjoxNjExMDkyOTg4fQ.AejXjHc3vB9xHK0hVvGEpgJWftS8ksVaLqHo65LGSeODNyHD0uh42e9iDVsjCcNZEX64tSx1a_Ah0TDnEGorOKfJYXSYqmBE3RSwY2QHFhoP4lbgaEo6usyyeIIG5pcdCI5Vgir11zL4BfuuqoiTZK2t6TRlBCEqNeuA8-je3kjeNiISbPm5Hmx_qzPom2UNimPj4zLBv4h2O0sR98Dz9Hpra9RZwMPLZFWDb28CHoty3NFW1aeXHwCC0EpXVjbh7jB7OlzKLQhV_66QQeX9SBv_gx9h5vVnLWj341wL-utIS6-EQrmnAMN07dXyhgH1K8ErIwklsezDYrVhEqpywg";
@@ -34,7 +34,7 @@ Deno.test("authenticator returns user claim", async () => {
       "http://localhost",
       { headers: { cookie: `token=${token}` } },
     );
-    const id = await getUserId(keys, clientId)(request);
+    const id = await getUserIdGetter(keys, clientId)(request);
     assertEquals(id, sub);
   } finally {
     time.restore();
@@ -43,6 +43,6 @@ Deno.test("authenticator returns user claim", async () => {
 
 Deno.test("authenticator returns undefined if no token in request", async () => {
   const request = new Request("http://localhost");
-  const id = await getUserId(keys, clientId)(request);
+  const id = await getUserIdGetter(keys, clientId)(request);
   assertEquals(id, undefined);
 });

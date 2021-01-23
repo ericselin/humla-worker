@@ -64,9 +64,9 @@ const getUserIdFromPayload = ({ sub }: Payload): string => {
   throw new Error("`sub` claim not found in payload");
 };
 
-type UserIdGetter = (request: Request) => Promise<string | undefined>;
+export type UserIdGetter = (request: Request) => Promise<string | undefined>;
 
-export const getUserId = (jwks: JSONWebKey[], clientId: string): UserIdGetter =>
+export const getUserIdGetter = (jwks: JSONWebKey[], clientId: string): UserIdGetter =>
   async (request) => {
     const token = getToken(request);
 
