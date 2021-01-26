@@ -1,141 +1,3 @@
-const getTags = (body)=>{
-    const regex = /(?:^|\s)(#\w+)/g;
-    const matches = body.matchAll(regex);
-    const tags = [];
-    for (const match of matches){
-        tags.push(match[1]);
-    }
-    return tags;
-};
-const getContext = (body)=>{
-    const regex = /(?:^|\s)(@\w+)/;
-    const [, context] = body.match(regex) || [];
-    return context;
-};
-const getDate = (dateParser)=>(body)=>{
-        const regex = /\B!(\w+\.?\w*)\b/;
-        const [, date] = body.match(regex) || [];
-        return date ? dateParser(date) : undefined;
-    }
-;
-const getTitle = (body)=>{
-    return body.split("\n")[0];
-};
-const groupBy = (field)=>(actions)=>{
-        if (field !== "context") throw new Error("Not implemented");
-        const groupMap = actions.reduce((map, action)=>{
-            const context = action.done ? "Completed" : action.context || "No context";
-            if (!map[context]) {
-                map[context] = {
-                    heading: context,
-                    children: []
-                };
-            }
-            map[context].children.push(action);
-            return map;
-        }, {
-        });
-        return Object.values(groupMap);
-    }
-;
-const linkList = (field)=>(actions)=>actions.filter((a)=>!a.done
-        ).flatMap((a)=>a[field]
-        ).filter((elem, idx, arr)=>elem && arr.indexOf(elem) === idx
-        ).map((elem)=>({
-                url: `/${field}${field.endsWith("s") ? "" : "s"}/${elem?.substring(1)}`,
-                text: elem
-            })
-        )
-;
-const renderAction = (action)=>`\n<form method="post" action="/actions.json">\n  <input type="hidden" name="id" value="${action.id}">\n  <details>\n      <summary>\n        <input type="checkbox" name="done"${action.done ? " checked" : ""}>\n        ${action.title}\n        ${action.tags.map((tag)=>`<i>${tag}</i>`
-    ).join(" ")} \n        ${action.date ? `<strong><time>${action.date}</time></strong>` : ""}\n      </summary>\n      <textarea name="body" cols="50" rows="5">${action.body}</textarea>\n      <input type="submit" value="Save"/>\n  </details>\n</form>\n`
-;
-const renderLinkList = (links, placeholder = "\n")=>links.length ? `\n<ul>${links.map((link)=>`\n  <li><a href="${link.url}">${link.text}</a></li>`
-    ).join("")}\n</ul>` : placeholder
-;
-const filterActions = (filterer)=>(actions)=>{
-        return actions.filter(filterer);
-    }
-;
-const getSaveHandler = (saveAction)=>async (event)=>{
-        const { request  } = event;
-        const form = await request.formData();
-        const id = form.get("id");
-        const done = form.get("done");
-        const body = form.get("body");
-        if (id && typeof id !== "string") {
-            throw new Error("Wrong id");
-        }
-        if (typeof body !== "string" || !body) {
-            throw new Error("Wrong body");
-        }
-        if (done && typeof done !== "string") {
-            throw new Error("Wrong body");
-        }
-        await saveAction({
-            id,
-            done,
-            body
-        }, event);
-        let redirect = request.referrer;
-        if (!id) redirect += "?focus=add";
-        return new Response(`Redirecting to ${redirect}`, {
-            status: 302,
-            headers: {
-                "Location": redirect
-            }
-        });
-    }
-;
-const getMainHandler = ({ handleAsset , handlePage , handleSave , handleRoutes  })=>async (event)=>{
-        const { request  } = event;
-        const url = new URL(request.url);
-        if (handleRoutes && handleRoutes[url.pathname]) {
-            return handleRoutes[url.pathname](request);
-        }
-        if (request.method === "GET" && !url.pathname.includes(".")) {
-            return handlePage(request);
-        }
-        if (request.method === "POST") {
-            return handleSave(event);
-        }
-        return handleAsset(request);
-    }
-;
-const listActions = async ()=>{
-    const cache = await caches.open("v1");
-    const response = await cache.match("/actions.json");
-    return response?.json();
-};
-const saveActions = async (actions, event)=>{
-    const cache = await caches.open("v1");
-    const actionsSerialized = JSON.stringify(actions);
-    event.waitUntil(fetch("/actions.json", {
-        method: "POST",
-        body: actionsSerialized,
-        redirect: "manual"
-    }));
-    return cache.put("/actions.json", new Response(actionsSerialized));
-};
-const handleAssetRequest = async (request)=>{
-    return await caches.match(request) || fetch(request);
-};
-const populateCache = async ()=>{
-    const assets = [
-        "/app.js", 
-    ];
-    const cache = await caches.open("v1");
-    const actions = await cache.match("/actions.json");
-    if (actions) {
-        console.log("We already have some actions:", actions);
-    } else {
-        assets.push("/actions.json");
-    }
-    return cache.addAll(assets);
-};
-self.addEventListener("install", (event)=>{
-    event.waitUntil(populateCache());
-});
 const pad = (nr)=>nr.toString().padStart(2, "0")
 ;
 const format = (d)=>`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -194,6 +56,169 @@ const parseDate = (dateStr)=>{
             }
     }
 };
+const groupBy = (field)=>(actions)=>{
+        if (field !== "context") throw new Error("Not implemented");
+        const groupMap = actions.reduce((map, action)=>{
+            const context = action.done ? "Completed" : action.context || "No context";
+            if (!map[context]) {
+                map[context] = {
+                    heading: context,
+                    children: []
+                };
+            }
+            map[context].children.push(action);
+            return map;
+        }, {
+        });
+        return Object.values(groupMap);
+    }
+;
+const linkList = (field)=>(actions)=>actions.filter((a)=>!a.done
+        ).flatMap((a)=>a[field]
+        ).filter((elem, idx, arr)=>elem && arr.indexOf(elem) === idx
+        ).map((elem)=>({
+                url: `/${field}${field.endsWith("s") ? "" : "s"}/${elem?.substring(1)}`,
+                text: elem
+            })
+        )
+;
+const renderAction = (action)=>`\n<form method="post" action="/actions.json">\n  <input type="hidden" name="id" value="${action.id}">\n  <details>\n      <summary>\n        <input type="checkbox" name="done"${action.done ? " checked" : ""}>\n        ${action.title}\n        ${action.tags.map((tag)=>`<i>${tag}</i>`
+    ).join(" ")} \n        ${action.date ? `<strong><time>${action.date}</time></strong>` : ""}\n      </summary>\n      <textarea name="body" cols="50" rows="5">${action.body}</textarea>\n      <input type="submit" value="Save"/>\n  </details>\n</form>\n`
+;
+const renderLinkList = (links, placeholder = "\n")=>links.length ? `\n<ul>${links.map((link)=>`\n  <li><a href="${link.url}">${link.text}</a></li>`
+    ).join("")}\n</ul>` : placeholder
+;
+const getTags = (body)=>{
+    const regex = /(?:^|\s)(#\w+)/g;
+    const matches = body.matchAll(regex);
+    const tags = [];
+    for (const match of matches){
+        tags.push(match[1]);
+    }
+    return tags;
+};
+const getContext = (body)=>{
+    const regex = /(?:^|\s)(@\w+)/;
+    const [, context] = body.match(regex) || [];
+    return context;
+};
+const getDate = (dateParser)=>(body)=>{
+        const regex = /\B!(\w+\.?\w*)\b/;
+        const [, date] = body.match(regex) || [];
+        return date ? dateParser(date) : undefined;
+    }
+;
+const getTitle = (body)=>{
+    return body.split("\n")[0];
+};
+const filterActions = (filterer)=>(actions)=>{
+        return actions.filter(filterer);
+    }
+;
+const routes = {
+    "unprocessed": {
+        heading: "Unprocessed",
+        filter: (action)=>!action.date && !action.done
+    },
+    "today": {
+        heading: "Today",
+        filter: (action)=>!!action.date && action.date <= today() && !action.done || action.done === today()
+    },
+    "week": {
+        heading: "This week",
+        filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
+    },
+    "later": {
+        heading: "Later",
+        filter: (action)=>!action.done && action.date === "later"
+    },
+    "someday": {
+        heading: "Someday",
+        filter: (action)=>!action.done && action.date === "someday"
+    },
+    "all": {
+        heading: "All",
+        filter: (action)=>!action.done
+    },
+    "contexts": {
+        heading: "Contexts",
+        searchFilter: (context)=>(action)=>!action.done && action.context === `@${context}`
+    },
+    "tags": {
+        heading: "Tags",
+        searchFilter: (tag)=>(action)=>!action.done && action.tags && action.tags.includes(`#${tag}`)
+    }
+};
+const getSaveHandler = (saveAction)=>async (event)=>{
+        const { request  } = event;
+        const form = await request.formData();
+        const id = form.get("id");
+        const done = form.get("done");
+        const body = form.get("body");
+        if (id && typeof id !== "string") {
+            throw new Error("Wrong id");
+        }
+        if (typeof body !== "string" || !body) {
+            throw new Error("Wrong body");
+        }
+        if (done && typeof done !== "string") {
+            throw new Error("Wrong body");
+        }
+        await saveAction({
+            id,
+            done,
+            body
+        }, event);
+        let redirect = request.referrer;
+        if (!id) redirect += "?focus=add";
+        return new Response(`Redirecting to ${redirect}`, {
+            status: 302,
+            headers: {
+                "Location": redirect
+            }
+        });
+    }
+;
+const returnJson = (data)=>new Response(JSON.stringify(data), {
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+;
+const listActions = async ()=>{
+    const cache = await caches.open("v1");
+    const response = await cache.match("/actions.json");
+    return response?.json();
+};
+const saveActions = async (actions, event)=>{
+    const cache = await caches.open("v1");
+    const actionsSerialized = JSON.stringify(actions);
+    event.waitUntil(fetch("/actions.json", {
+        method: "POST",
+        body: actionsSerialized,
+        redirect: "manual"
+    }));
+    return cache.put("/actions.json", new Response(actionsSerialized));
+};
+const handleAssetRequest = async (request)=>{
+    return await caches.match(request) || fetch(request);
+};
+const populateCache = async ()=>{
+    const assets = [
+        "/app.js", 
+    ];
+    const cache = await caches.open("v1");
+    const actions = await cache.match("/actions.json");
+    if (actions) {
+        console.log("We already have some actions:", actions);
+    } else {
+        assets.push("/actions.json");
+    }
+    return cache.addAll(assets);
+};
+self.addEventListener("install", (event)=>{
+    event.waitUntil(populateCache());
+});
 function bytesToUuid(bytes) {
     const bits = [
         ...bytes
@@ -798,40 +823,6 @@ const getActionSaver = (getActions, saveActions1)=>async (input, event)=>{
         return saveActions1(actions, event);
     }
 ;
-const routes = {
-    "unprocessed": {
-        heading: "Unprocessed",
-        filter: (action)=>!action.date && !action.done
-    },
-    "today": {
-        heading: "Today",
-        filter: (action)=>!!action.date && action.date <= today() && !action.done || action.done === today()
-    },
-    "week": {
-        heading: "This week",
-        filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
-    },
-    "later": {
-        heading: "Later",
-        filter: (action)=>!action.done && action.date === "later"
-    },
-    "someday": {
-        heading: "Someday",
-        filter: (action)=>!action.done && action.date === "someday"
-    },
-    "all": {
-        heading: "All",
-        filter: (action)=>!action.done
-    },
-    "contexts": {
-        heading: "Contexts",
-        searchFilter: (context)=>(action)=>!action.done && action.context === `@${context}`
-    },
-    "tags": {
-        heading: "Tags",
-        searchFilter: (tag)=>(action)=>!action.done && action.tags && action.tags.includes(`#${tag}`)
-    }
-};
 const renderGroup = (group, headingLevel)=>`\n<h${headingLevel}>${group.heading}</h${headingLevel}>${group.children.length ? `\n  <ul>${group.children.map((item)=>`\n    <li>${renderItem(item, headingLevel + 1)}\n    </li>`
     ).join("")}\n  </ul>` : `\n  🥳\n  <p>No actions here, yay!</p>`}`
 ;
@@ -874,10 +865,36 @@ const getPageHandler = (getActions)=>async (request)=>{
         });
     }
 ;
+const getMainHandler = ({ listActions: listActions1 , saveActions: saveActions1 , handleAssetRequest: handleAssetRequest1 , handleRoutes  })=>{
+    const handlePage = getPageHandler(listActions1);
+    const handleSave = getSaveHandler(getActionSaver(listActions1, saveActions1));
+    return async (event)=>{
+        const { request  } = event;
+        const url = new URL(request.url);
+        if (handleRoutes && handleRoutes[url.pathname]) {
+            return handleRoutes[url.pathname](request);
+        }
+        if (url.pathname === "/actions.json") {
+            if (request.method === "POST") {
+                return handleSave(event);
+            }
+            if (request.method === "GET") {
+                return Promise.resolve(request).then(listActions1).then(returnJson);
+            }
+        }
+        if (request.method === "GET") {
+            if (!url.pathname.includes(".")) return handlePage(request);
+            else handleAssetRequest1(request);
+        }
+        return new Response(undefined, {
+            status: 405
+        });
+    };
+};
 const handleRequest = getMainHandler({
-    handlePage: getPageHandler(listActions),
-    handleSave: getSaveHandler(getActionSaver(listActions, saveActions)),
-    handleAsset: handleAssetRequest
+    listActions,
+    saveActions,
+    handleAssetRequest
 });
 self.addEventListener("fetch", (event)=>{
     event.respondWith(handleRequest(event));

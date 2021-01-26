@@ -1,25 +1,60 @@
-const getTags = (body)=>{
-    const regex = /(?:^|\s)(#\w+)/g;
-    const matches = body.matchAll(regex);
-    const tags = [];
-    for (const match of matches){
-        tags.push(match[1]);
-    }
-    return tags;
-};
-const getContext = (body)=>{
-    const regex = /(?:^|\s)(@\w+)/;
-    const [, context] = body.match(regex) || [];
-    return context;
-};
-const getDate = (dateParser)=>(body)=>{
-        const regex = /\B!(\w+\.?\w*)\b/;
-        const [, date] = body.match(regex) || [];
-        return date ? dateParser(date) : undefined;
-    }
+const pad = (nr)=>nr.toString().padStart(2, "0")
 ;
-const getTitle = (body)=>{
-    return body.split("\n")[0];
+const format1 = (d)=>`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+;
+const formatDM = (d, m)=>`${new Date().getFullYear()}-${pad(m)}-${pad(d)}`
+;
+const sundayDate = ()=>{
+    const d = new Date();
+    d.setDate(d.getDate() + (7 - (d.getDay() || 7)));
+    return d;
+};
+const today = ()=>format1(new Date())
+;
+const sunday = ()=>format1(sundayDate())
+;
+const thisMonday = ()=>{
+    const d = sundayDate();
+    d.setDate(d.getDate() - 6);
+    return format1(d);
+};
+const parseDate = (dateStr)=>{
+    switch(dateStr.toLowerCase()){
+        case "l":
+            return "later";
+        case "s":
+            return "someday";
+        case "today":
+        case "t":
+            return format1(new Date());
+        case "tomorrow":
+        case "tm":
+            {
+                const d = new Date();
+                d.setDate(new Date().getDate() + 1);
+                return format1(d);
+            }
+        case "this week":
+        case "tw":
+            return format1(sundayDate());
+        case "next week":
+        case "nw":
+            {
+                const d = sundayDate();
+                d.setDate(d.getDate() + 7);
+                return format1(d);
+            }
+        default:
+            {
+                const date = /^(\d{1,2})\.(\d{1,2})/;
+                const match = dateStr.match(date);
+                if (match) {
+                    const [, day, month] = match;
+                    return formatDM(day, month);
+                }
+                return dateStr;
+            }
+    }
 };
 const groupBy = (field)=>(actions)=>{
         if (field !== "context") throw new Error("Not implemented");
@@ -53,10 +88,67 @@ const renderAction = (action)=>`\n<form method="post" action="/actions.json">\n 
 const renderLinkList = (links, placeholder = "\n")=>links.length ? `\n<ul>${links.map((link)=>`\n  <li><a href="${link.url}">${link.text}</a></li>`
     ).join("")}\n</ul>` : placeholder
 ;
+const getTags = (body)=>{
+    const regex = /(?:^|\s)(#\w+)/g;
+    const matches = body.matchAll(regex);
+    const tags = [];
+    for (const match of matches){
+        tags.push(match[1]);
+    }
+    return tags;
+};
+const getContext = (body)=>{
+    const regex = /(?:^|\s)(@\w+)/;
+    const [, context] = body.match(regex) || [];
+    return context;
+};
+const getDate = (dateParser)=>(body)=>{
+        const regex = /\B!(\w+\.?\w*)\b/;
+        const [, date] = body.match(regex) || [];
+        return date ? dateParser(date) : undefined;
+    }
+;
+const getTitle = (body)=>{
+    return body.split("\n")[0];
+};
 const filterActions = (filterer)=>(actions)=>{
         return actions.filter(filterer);
     }
 ;
+const routes = {
+    "unprocessed": {
+        heading: "Unprocessed",
+        filter: (action)=>!action.date && !action.done
+    },
+    "today": {
+        heading: "Today",
+        filter: (action)=>!!action.date && action.date <= today() && !action.done || action.done === today()
+    },
+    "week": {
+        heading: "This week",
+        filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
+    },
+    "later": {
+        heading: "Later",
+        filter: (action)=>!action.done && action.date === "later"
+    },
+    "someday": {
+        heading: "Someday",
+        filter: (action)=>!action.done && action.date === "someday"
+    },
+    "all": {
+        heading: "All",
+        filter: (action)=>!action.done
+    },
+    "contexts": {
+        heading: "Contexts",
+        searchFilter: (context)=>(action)=>!action.done && action.context === `@${context}`
+    },
+    "tags": {
+        heading: "Tags",
+        searchFilter: (tag)=>(action)=>!action.done && action.tags && action.tags.includes(`#${tag}`)
+    }
+};
 const getSaveHandler = (saveAction)=>async (event)=>{
         const { request  } = event;
         const form = await request.formData();
@@ -87,20 +179,11 @@ const getSaveHandler = (saveAction)=>async (event)=>{
         });
     }
 ;
-const getMainHandler = ({ handleAsset , handlePage , handleSave , handleRoutes  })=>async (event)=>{
-        const { request  } = event;
-        const url = new URL(request.url);
-        if (handleRoutes && handleRoutes[url.pathname]) {
-            return handleRoutes[url.pathname](request);
+const returnJson = (data)=>new Response(JSON.stringify(data), {
+        headers: {
+            "Content-Type": "application/json"
         }
-        if (request.method === "GET" && !url.pathname.includes(".")) {
-            return handlePage(request);
-        }
-        if (request.method === "POST") {
-            return handleSave(event);
-        }
-        return handleAsset(request);
-    }
+    })
 ;
 const contentTypes = {
     "js": "application/javascript"
@@ -397,7 +480,7 @@ class ECB {
         return output;
     }
 }
-function pad(m) {
+function pad1(m) {
     const blockNumber = Math.ceil((m.length + 1) / 16);
     const paddedMessageLength = blockNumber * 16;
     const remainedLength = paddedMessageLength - m.length;
@@ -3655,64 +3738,7 @@ const userActionsSaver = (actions)=>async (userId)=>{
         await ACTIONS.put(userId, JSON.stringify(actions));
     }
 ;
-const pad1 = (nr)=>nr.toString().padStart(2, "0")
-;
-const format1 = (d)=>`${d.getFullYear()}-${pad1(d.getMonth() + 1)}-${pad1(d.getDate())}`
-;
-const formatDM = (d, m)=>`${new Date().getFullYear()}-${pad1(m)}-${pad1(d)}`
-;
-const sundayDate = ()=>{
-    const d = new Date();
-    d.setDate(d.getDate() + (7 - (d.getDay() || 7)));
-    return d;
-};
-const today = ()=>format1(new Date())
-;
-const sunday = ()=>format1(sundayDate())
-;
-const thisMonday = ()=>{
-    const d = sundayDate();
-    d.setDate(d.getDate() - 6);
-    return format1(d);
-};
-const parseDate = (dateStr)=>{
-    switch(dateStr.toLowerCase()){
-        case "l":
-            return "later";
-        case "s":
-            return "someday";
-        case "today":
-        case "t":
-            return format1(new Date());
-        case "tomorrow":
-        case "tm":
-            {
-                const d = new Date();
-                d.setDate(new Date().getDate() + 1);
-                return format1(d);
-            }
-        case "this week":
-        case "tw":
-            return format1(sundayDate());
-        case "next week":
-        case "nw":
-            {
-                const d = sundayDate();
-                d.setDate(d.getDate() + 7);
-                return format1(d);
-            }
-        default:
-            {
-                const date = /^(\d{1,2})\.(\d{1,2})/;
-                const match = dateStr.match(date);
-                if (match) {
-                    const [, day, month] = match;
-                    return formatDM(day, month);
-                }
-                return dateStr;
-            }
-    }
-};
+const handleAssetRequest = getAssetFromKV;
 class RawBinary extends Uint8Array {
     hex() {
         return [
@@ -3848,49 +3874,6 @@ function base64_to_binary(b) {
     }
     return bytes;
 }
-function bytesToUuid(bytes) {
-    const bits3 = [
-        ...bytes
-    ].map((bit)=>{
-        const s = bit.toString(16);
-        return bit < 16 ? "0" + s : s;
-    });
-    return [
-        ...bits3.slice(0, 4),
-        "-",
-        ...bits3.slice(4, 6),
-        "-",
-        ...bits3.slice(6, 8),
-        "-",
-        ...bits3.slice(8, 10),
-        "-",
-        ...bits3.slice(10, 16), 
-    ].join("");
-}
-function uuidToBytes(uuid) {
-    const bytes = [];
-    uuid.replace(/[a-fA-F0-9]{2}/g, (hex)=>{
-        bytes.push(parseInt(hex, 16));
-        return "";
-    });
-    return bytes;
-}
-function stringToBytes(str) {
-    str = unescape(encodeURIComponent(str));
-    const bytes = new Array(str.length);
-    for(let i3 = 0; i3 < str.length; i3++){
-        bytes[i3] = str.charCodeAt(i3);
-    }
-    return bytes;
-}
-function createBuffer(content) {
-    const arrayBuffer = new ArrayBuffer(content.length);
-    const uint8Array = new Uint8Array(arrayBuffer);
-    for(let i3 = 0; i3 < content.length; i3++){
-        uint8Array[i3] = content[i3];
-    }
-    return arrayBuffer;
-}
 function i2osp(x, length) {
     const t = new Uint8Array(length);
     for(let i3 = length - 1; i3 >= 0; i3--){
@@ -3957,6 +3940,49 @@ function fromHexString1(hex) {
 }
 function rotl(x, n) {
     return x << n | x >>> 32 - n;
+}
+function bytesToUuid(bytes) {
+    const bits3 = [
+        ...bytes
+    ].map((bit)=>{
+        const s = bit.toString(16);
+        return bit < 16 ? "0" + s : s;
+    });
+    return [
+        ...bits3.slice(0, 4),
+        "-",
+        ...bits3.slice(4, 6),
+        "-",
+        ...bits3.slice(6, 8),
+        "-",
+        ...bits3.slice(8, 10),
+        "-",
+        ...bits3.slice(10, 16), 
+    ].join("");
+}
+function uuidToBytes(uuid) {
+    const bytes = [];
+    uuid.replace(/[a-fA-F0-9]{2}/g, (hex)=>{
+        bytes.push(parseInt(hex, 16));
+        return "";
+    });
+    return bytes;
+}
+function stringToBytes(str) {
+    str = unescape(encodeURIComponent(str));
+    const bytes = new Array(str.length);
+    for(let i3 = 0; i3 < str.length; i3++){
+        bytes[i3] = str.charCodeAt(i3);
+    }
+    return bytes;
+}
+function createBuffer(content) {
+    const arrayBuffer = new ArrayBuffer(content.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    for(let i3 = 0; i3 < content.length; i3++){
+        uint8Array[i3] = content[i3];
+    }
+    return arrayBuffer;
 }
 class RawBinary1 extends Uint8Array {
     hex() {
@@ -4814,40 +4840,6 @@ const getActionSaver = (getActions, saveActions)=>async (input, event)=>{
         return saveActions(actions, event);
     }
 ;
-const routes = {
-    "unprocessed": {
-        heading: "Unprocessed",
-        filter: (action)=>!action.date && !action.done
-    },
-    "today": {
-        heading: "Today",
-        filter: (action)=>!!action.date && action.date <= today() && !action.done || action.done === today()
-    },
-    "week": {
-        heading: "This week",
-        filter: (action)=>!!action.date && (action.date >= thisMonday() && action.date <= sunday())
-    },
-    "later": {
-        heading: "Later",
-        filter: (action)=>!action.done && action.date === "later"
-    },
-    "someday": {
-        heading: "Someday",
-        filter: (action)=>!action.done && action.date === "someday"
-    },
-    "all": {
-        heading: "All",
-        filter: (action)=>!action.done
-    },
-    "contexts": {
-        heading: "Contexts",
-        searchFilter: (context)=>(action)=>!action.done && action.context === `@${context}`
-    },
-    "tags": {
-        heading: "Tags",
-        searchFilter: (tag)=>(action)=>!action.done && action.tags && action.tags.includes(`#${tag}`)
-    }
-};
 function rsa_pkcs1_encrypt(bytes, n, e, m) {
     const p = concat([
         0,
@@ -4960,9 +4952,9 @@ class BlockCiperOperation {
         const computedIV = typeof computedConfig.iv === "string" ? new TextEncoder().encode(computedConfig.iv) : computedConfig.iv;
         if (blockSize !== computedIV?.length) throw "Invalid IV size";
         if (computedConfig.mode === "ecb") {
-            return ECB.encrypt(pad(m), ciper, 16);
+            return ECB.encrypt(pad1(m), ciper, 16);
         } else if (computedConfig.mode === "cbc") {
-            return CBC.encrypt(pad(m), ciper, 16, computedIV);
+            return CBC.encrypt(pad1(m), ciper, 16, computedIV);
         } else if (computedConfig.mode === "cfb") {
             return CFB.encrypt(m, ciper, 16, computedIV);
         } else throw "Not implemented";
@@ -6405,6 +6397,32 @@ const getPageHandler = (getActions)=>async (request)=>{
         });
     }
 ;
+const getMainHandler = ({ listActions , saveActions , handleAssetRequest: handleAssetRequest1 , handleRoutes  })=>{
+    const handlePage = getPageHandler(listActions);
+    const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
+    return async (event)=>{
+        const { request  } = event;
+        const url = new URL(request.url);
+        if (handleRoutes && handleRoutes[url.pathname]) {
+            return handleRoutes[url.pathname](request);
+        }
+        if (url.pathname === "/actions.json") {
+            if (request.method === "POST") {
+                return handleSave(event);
+            }
+            if (request.method === "GET") {
+                return Promise.resolve(request).then(listActions).then(returnJson);
+            }
+        }
+        if (request.method === "GET") {
+            if (!url.pathname.includes(".")) return handlePage(request);
+            else handleAssetRequest1(request);
+        }
+        return new Response(undefined, {
+            status: 405
+        });
+    };
+};
 function rsa_pkcs1_verify(key8, s, m) {
     if (!key8.e) throw "Invalid RSA key";
     let em = i2osp(rsaep(key8.n, key8.e, os2ip(s)), key8.length);
@@ -6806,15 +6824,9 @@ const userIdGetter = getUserIdGetter(jwks, clientId);
 const listActions = getServerActionLister(userIdGetter, userActionsGetter);
 const saveActions = getServerActionSaver(userIdGetter, userActionsSaver);
 const handleRequest = getMainHandler({
-    handlePage: getPageHandler(listActions),
-    handleSave: getSaveHandler(getActionSaver(listActions, saveActions)),
-    handleAsset: getAssetFromKV,
-    handleRoutes: {
-        "/actions.json": async (request)=>{
-            const actions = await listActions(request);
-            return new Response(JSON.stringify(actions));
-        }
-    }
+    listActions,
+    saveActions,
+    handleAssetRequest: getAssetFromKV
 });
 self.addEventListener("fetch", (event)=>{
     event.respondWith(handleRequest(event));
