@@ -57,7 +57,8 @@ const filterActions = (filterer)=>(actions)=>{
         return actions.filter(filterer);
     }
 ;
-const getSaveHandler = (saveAction)=>async (request)=>{
+const getSaveHandler = (saveAction)=>async (event)=>{
+        const { request  } = event;
         const form = await request.formData();
         const id = form.get("id");
         const done = form.get("done");
@@ -75,7 +76,7 @@ const getSaveHandler = (saveAction)=>async (request)=>{
             id,
             done,
             body
-        });
+        }, event);
         let redirect = request.referrer;
         if (!id) redirect += "?focus=add";
         return new Response(`Redirecting to ${redirect}`, {
@@ -86,12 +87,17 @@ const getSaveHandler = (saveAction)=>async (request)=>{
         });
     }
 ;
-const getMainHandler = ({ handleAsset , handlePage , handleSave  })=>async (request)=>{
+const getMainHandler = ({ handleAsset , handlePage , handleSave , handleRoutes  })=>async (event)=>{
+        const { request  } = event;
         const url = new URL(request.url);
+        if (handleRoutes && handleRoutes[url.pathname]) {
+            return handleRoutes[url.pathname](request);
+        }
         if (request.method === "GET" && !url.pathname.includes(".")) {
             return handlePage(request);
-        } else if (request.method === "POST") {
-            return handleSave(request);
+        }
+        if (request.method === "POST") {
+            return handleSave(event);
         }
         return handleAsset(request);
     }
@@ -101,9 +107,15 @@ const listActions = async ()=>{
     const response = await cache.match("/actions.json");
     return response?.json();
 };
-const saveActions = async (actions)=>{
+const saveActions = async (actions, event)=>{
     const cache = await caches.open("v1");
-    return cache.put("/actions.json", new Response(JSON.stringify(actions)));
+    const actionsSerialized = JSON.stringify(actions);
+    event.waitUntil(fetch("/actions.json", {
+        method: "POST",
+        body: actionsSerialized,
+        redirect: "manual"
+    }));
+    return cache.put("/actions.json", new Response(actionsSerialized));
 };
 const handleAssetRequest = async (request)=>{
     return await caches.match(request) || fetch(request);
@@ -772,9 +784,9 @@ const processActionInput = (input)=>{
     if (input.done) action.done = today();
     return action;
 };
-const getActionSaver = (getActions, saveActions1)=>async (input)=>{
+const getActionSaver = (getActions, saveActions1)=>async (input, event)=>{
         const action = processActionInput(input);
-        const actions = await getActions();
+        const actions = await getActions(event.request);
         const index = actions.findIndex((a)=>a.id === action.id
         );
         if (~index) {
@@ -783,7 +795,7 @@ const getActionSaver = (getActions, saveActions1)=>async (input)=>{
             actions.push(action);
         }
         console.log("saving", action, actions);
-        return saveActions1(actions);
+        return saveActions1(actions, event);
     }
 ;
 const routes = {
@@ -839,7 +851,7 @@ const getPageHandler = (getActions)=>async (request)=>{
             if (route.filter) filter = route.filter;
             if (route.searchFilter) filter = route.searchFilter(searchTerm);
         }
-        const allActions = await getActions();
+        const allActions = await getActions(request);
         const actionGroup = await Promise.resolve(allActions).then(filterActions(filter)).then(groupBy("context"));
         const contexts = linkList("context")(allActions);
         const tags = linkList("tags")(allActions);
@@ -868,5 +880,5 @@ const handleRequest = getMainHandler({
     handleAsset: handleAssetRequest
 });
 self.addEventListener("fetch", (event)=>{
-    event.respondWith(handleRequest(event.request));
+    event.respondWith(handleRequest(event));
 });

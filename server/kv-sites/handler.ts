@@ -1,5 +1,5 @@
 /// <reference path="./domain.d.ts" />
-/// <reference path="./workers-runtime.d.ts" />
+/// <reference path="../cf-runtime.d.ts" />
 
 declare const ASSETS: KVNamespace | undefined;
 

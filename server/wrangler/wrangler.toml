@@ -7,4 +7,5 @@ zone_id = ""
 
 kv_namespaces = [
   { binding = "ASSETS", id = "5708240827844761a93e82f00abec273" },
+  { binding = "ACTIONS", id = "caa1346db8af4d24a59dfc3834ae1bc0" },
 ]

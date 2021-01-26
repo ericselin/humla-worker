@@ -24,25 +24,23 @@ type ActionInput = {
 };
 
 type ActionLister = (request: Request) => Promise<Action[]>;
-type ActionPersister = (actions: Action[], request: Request) => Promise<void>;
-type ActionSaver = (input: ActionInput, request: Request) => Promise<void>;
-type ActionSaverGetter = (
-  getActions: ActionLister,
-  saveActions: ActionPersister,
-) => ActionSaver;
+type ActionPersister = (actions: Action[], event: FetchEvent) => Promise<void>;
+
+type EventHandler = (event: FetchEvent) => Promise<Response> | Response;
 
 type RequestHandler = (
   request: Request,
 ) => Promise<Response> | Response;
 
 type PageHandler = (getActions: ActionLister) => RequestHandler;
-type SaveHandler = (saveAction: ActionSaver) => RequestHandler;
+type SaveHandler = (saveAction: ActionSaver) => EventHandler;
+type ActionSaver = (input: ActionInput, event: FetchEvent) => Promise<void>;
 type AssetHandler = (cache: Cache) => RequestHandler;
 
 type MainHandlerDependencies = {
-  handlePage: RequestHandler;
-  handleSave: RequestHandler;
-  handleAsset: RequestHandler;
+  listActions: ActionLister;
+  saveActions: ActionPersister;
+  handleAssetRequest: RequestHandler;
   // this is needed in order to implement a server-side oauth endpoint
   handleRoutes?: {
     [urlPath: string]: RequestHandler;
@@ -51,7 +49,7 @@ type MainHandlerDependencies = {
 
 type MainHandler = (
   dependencies: MainHandlerDependencies,
-) => RequestHandler;
+) => EventHandler;
 
 type Link = {
   url: string;

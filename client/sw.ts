@@ -2,8 +2,7 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-import { getActionSaver } from "../lib/save.ts";
-import { getMainHandler, getPageHandler, getSaveHandler } from "../lib/sw.ts";
+import { getMainHandler } from "../lib/sw.ts";
 
 const listActions: ActionLister = async () => {
   const cache = await caches.open("v1");
@@ -11,9 +10,16 @@ const listActions: ActionLister = async () => {
   return response?.json();
 };
 
-const saveActions: ActionPersister = async (actions) => {
+const saveActions: ActionPersister = async (actions, event) => {
   const cache = await caches.open("v1");
-  return cache.put("/actions.json", new Response(JSON.stringify(actions)));
+  const actionsSerialized = JSON.stringify(actions);
+  event.waitUntil(
+    fetch(
+      "/actions.json",
+      { method: "POST", body: actionsSerialized, redirect: "manual" },
+    ),
+  );
+  return cache.put("/actions.json", new Response(actionsSerialized));
 };
 
 const handleAssetRequest: RequestHandler = async (request) => {
@@ -21,13 +27,13 @@ const handleAssetRequest: RequestHandler = async (request) => {
 };
 
 const handleRequest = getMainHandler({
-  handlePage: getPageHandler(listActions),
-  handleSave: getSaveHandler(getActionSaver(listActions, saveActions)),
-  handleAsset: handleAssetRequest,
+  listActions,
+  saveActions,
+  handleAssetRequest,
 });
 
 self.addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
+  event.respondWith(handleRequest(event));
 });
 
 const populateCache = async () => {

@@ -1,4 +1,5 @@
 /// <reference path="../domain.d.ts" />
+/// <reference path="./cf-runtime.d.ts" />
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -9,13 +10,16 @@ import { getUserIdGetter, UserIdGetter } from "./auth.ts";
 import { ifEquals } from "./fn.ts";
 
 type UserActionsGetter = (userId: string) => Promise<Action[]>;
+type UserActionsSaver = (
+  actions: Action[],
+) => (userId: string) => Promise<void>;
 
-const getActionLister = (
+const getServerActionLister = (
   getUserId: UserIdGetter,
   getUserActions: UserActionsGetter,
 ): ActionLister =>
-  async (request) => {
-    return Promise.resolve(request)
+  (request) =>
+    Promise.resolve(request)
       // get user id from response
       .then(getUserId)
       .then(ifEquals(
@@ -25,14 +29,23 @@ const getActionLister = (
         // otherwise return user todos from 'humla-actions' kv namespace
         getUserActions,
       ));
-  };
 
-const saveActions: ActionPersister = async (actions) => {
-  // get user id from response
-  // return some useful http status if failed
-  // save user todos to kv namespace
-  throw new Error("Not implemented");
-};
+const getServerActionSaver = (
+  getUserId: UserIdGetter,
+  saveUserActions: UserActionsSaver,
+): ActionPersister =>
+  (actions, { request }) => {
+    // get user id from response
+    return Promise.resolve(request)
+      .then(getUserId)
+      .then(ifEquals(
+        undefined,
+        () => {
+          throw new Error(`User not logged in`);
+        },
+        saveUserActions(actions),
+      ));
+  };
 
 const jwks = [
   {
@@ -56,23 +69,37 @@ const jwks = [
 ];
 const clientId = "407408718192.apps.googleusercontent.com";
 
-const userActionsGetter = async (userId: string) => {
-  throw new Error("Not implemented");
+declare const ACTIONS: KVNamespace;
+
+const userActionsGetter: UserActionsGetter = async (userId) => {
+  return ACTIONS.get(userId, "json") as Promise<Action[]>;
 };
 
-const listActions = getActionLister(
-  getUserIdGetter(jwks, clientId),
+const userActionsSaver: UserActionsSaver = (actions) =>
+  async (userId) => {
+    await ACTIONS.put(userId, JSON.stringify(actions));
+  };
+
+const userIdGetter = getUserIdGetter(jwks, clientId);
+
+const listActions = getServerActionLister(
+  userIdGetter,
   userActionsGetter,
+);
+
+const saveActions = getServerActionSaver(
+  userIdGetter,
+  userActionsSaver,
 );
 
 const handleAssetRequest: RequestHandler = getAssetFromKV;
 
 const handleRequest = getMainHandler({
-  handlePage: getPageHandler(listActions),
-  handleSave: getSaveHandler(getActionSaver(listActions, saveActions)),
-  handleAsset: handleAssetRequest,
+  listActions,
+  saveActions,
+  handleAssetRequest,
 });
 
 self.addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
+  event.respondWith(handleRequest(event));
 });

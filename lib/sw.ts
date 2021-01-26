@@ -3,6 +3,7 @@
 import { sunday, thisMonday, today } from "./dates.ts";
 import { groupBy, linkList } from "./list.ts";
 import { renderPage } from "./page.ts";
+import { getActionSaver } from "./save.ts";
 
 type ActionFilter = (action: Action) => boolean;
 
@@ -111,7 +112,8 @@ export const getPageHandler: PageHandler = (getActions) =>
   };
 
 export const getSaveHandler: SaveHandler = (saveAction) =>
-  async (request) => {
+  async (event) => {
+    const { request } = event;
     const form = await request.formData();
     const id = form.get("id");
     const done = form.get("done");
@@ -129,7 +131,7 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
       id,
       done,
       body,
-    }, request);
+    }, event);
     let redirect = request.referrer;
     // if this was an add, re-focus the add textarea
     if (!id) redirect += "?focus=add";
@@ -139,23 +141,45 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
     );
   };
 
+const returnJson = (data: any): Response =>
+  new Response(
+    JSON.stringify(data),
+    { headers: { "Content-Type": "application/json" } },
+  );
+
 export const getMainHandler: MainHandler = (
-  { handleAsset, handlePage, handleSave, handleRoutes },
-) =>
-  async (request) => {
+  { listActions, saveActions, handleAssetRequest, handleRoutes },
+) => {
+  const handlePage = getPageHandler(listActions);
+  const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
+  return async (event) => {
+    const { request } = event;
     const url = new URL(request.url);
 
+    // specifically set routes
     if (handleRoutes && handleRoutes[url.pathname]) {
       return handleRoutes[url.pathname](request);
     }
 
-    if (request.method === "GET" && !url.pathname.includes(".")) {
-      return handlePage(request);
+    // actions api
+    if (url.pathname === "/actions.json") {
+      if (request.method === "POST") {
+        return handleSave(event);
+      }
+      if (request.method === "GET") {
+        return Promise.resolve(request)
+          .then(listActions)
+          .then(returnJson);
+      }
     }
 
-    if (request.method === "POST") {
-      return handleSave(request);
+    // normal get requests
+    if (request.method === "GET") {
+      if (!url.pathname.includes(".")) return handlePage(request);
+      else handleAssetRequest(request);
     }
 
-    return handleAsset(request);
+    // otherwise method is not supported
+    return new Response(undefined, { status: 405 });
   };
+};
