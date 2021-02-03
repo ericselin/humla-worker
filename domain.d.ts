@@ -41,10 +41,6 @@ type MainHandlerDependencies = {
   listActions: ActionLister;
   saveActions: ActionPersister;
   handleAssetRequest: RequestHandler;
-  // this is needed in order to implement a server-side oauth endpoint
-  handleRoutes?: {
-    [urlPath: string]: RequestHandler;
-  };
 };
 
 type MainHandler = (

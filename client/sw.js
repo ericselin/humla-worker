@@ -865,15 +865,12 @@ const getPageHandler = (getActions)=>async (request)=>{
         });
     }
 ;
-const getMainHandler = ({ listActions: listActions1 , saveActions: saveActions1 , handleAssetRequest: handleAssetRequest1 , handleRoutes  })=>{
+const getMainHandler = ({ listActions: listActions1 , saveActions: saveActions1 , handleAssetRequest: handleAssetRequest1  })=>{
     const handlePage = getPageHandler(listActions1);
     const handleSave = getSaveHandler(getActionSaver(listActions1, saveActions1));
     return async (event)=>{
         const { request  } = event;
         const url = new URL(request.url);
-        if (handleRoutes && handleRoutes[url.pathname]) {
-            return handleRoutes[url.pathname](request);
-        }
         if (url.pathname === "/actions.json") {
             if (request.method === "POST") {
                 return handleSave(event);
@@ -883,8 +880,8 @@ const getMainHandler = ({ listActions: listActions1 , saveActions: saveActions1 
             }
         }
         if (request.method === "GET") {
-            if (!url.pathname.includes(".")) return handlePage(request);
-            else handleAssetRequest1(request);
+            if (url.pathname.includes(".")) return handleAssetRequest1(request);
+            return handlePage(request);
         }
         return new Response(undefined, {
             status: 405

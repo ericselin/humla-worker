@@ -21,3 +21,24 @@ Todo-app proof-of-concept utilizing workers and other performance optimizations.
 ## Development
 
 The only requirement for developing and building the project is the awesome Deno runtime (one batteries-included executable).
+
+## Routes
+
+Shared
+
+- GET /x
+  Main page routes that render html
+  Needs action lister
+- GET /x.x
+  Asset routes
+- POST /upsert
+  Saving (or creating) a single action from form data
+  Needs action lister (in order to get all actions array) and persister (in order to save array)
+
+Server only
+
+- GET /api/actions.json
+  Getting all actions json
+- POST /api/actions.json
+  Saving all actions json
+- Login routes

@@ -3,8 +3,7 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-import { getActionSaver } from "../lib/save.ts";
-import { getMainHandler, getPageHandler, getSaveHandler } from "../lib/sw.ts";
+import { getMainHandler } from "../lib/sw.ts";
 import { getAssetFromKV } from "./kv-sites/mod.ts";
 import { getUserIdGetter, UserIdGetter } from "./auth.ts";
 import { ifEquals } from "./fn.ts";
@@ -98,6 +97,35 @@ const handleRequest = getMainHandler({
   listActions,
   saveActions,
   handleAssetRequest,
+});
+
+// add server-only routes
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  if (url.pathname === "/api/actions.json") {
+    if (request.method === "POST") {
+      return event.respondWith(
+        Promise.resolve(request)
+          .then((req) => req.json() as Promise<Action[]>)
+          .then((actions) => saveActions(actions, event))
+          .then(() => new Response("Saved", { status: 204 })),
+      );
+    }
+    if (request.method === "GET") {
+      return event.respondWith(
+        Promise.resolve(request)
+          .then(listActions)
+          .then((actions) =>
+            new Response(JSON.stringify(actions), {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            })
+          ),
+      );
+    }
+  }
 });
 
 self.addEventListener("fetch", (event) => {

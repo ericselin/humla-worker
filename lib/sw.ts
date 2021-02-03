@@ -141,14 +141,8 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
     );
   };
 
-const returnJson = (data: any): Response =>
-  new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  );
-
 export const getMainHandler: MainHandler = (
-  { listActions, saveActions, handleAssetRequest, handleRoutes },
+  { listActions, saveActions, handleAssetRequest },
 ) => {
   const handlePage = getPageHandler(listActions);
   const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
@@ -156,27 +150,15 @@ export const getMainHandler: MainHandler = (
     const { request } = event;
     const url = new URL(request.url);
 
-    // specifically set routes
-    if (handleRoutes && handleRoutes[url.pathname]) {
-      return handleRoutes[url.pathname](request);
-    }
-
-    // actions api
-    if (url.pathname === "/actions.json") {
-      if (request.method === "POST") {
-        return handleSave(event);
-      }
-      if (request.method === "GET") {
-        return Promise.resolve(request)
-          .then(listActions)
-          .then(returnJson);
-      }
-    }
-
     // normal get requests
     if (request.method === "GET") {
       if (url.pathname.includes(".")) return handleAssetRequest(request);
       return handlePage(request);
+    }
+
+    // actions saving
+    if (request.method === "POST" && url.pathname === "/upsert") {
+      return handleSave(event);
     }
 
     // otherwise method is not supported

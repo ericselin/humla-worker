@@ -6397,15 +6397,12 @@ const getPageHandler = (getActions)=>async (request)=>{
         });
     }
 ;
-const getMainHandler = ({ listActions , saveActions , handleAssetRequest: handleAssetRequest1 , handleRoutes  })=>{
+const getMainHandler = ({ listActions , saveActions , handleAssetRequest: handleAssetRequest1  })=>{
     const handlePage = getPageHandler(listActions);
     const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
     return async (event)=>{
         const { request  } = event;
         const url = new URL(request.url);
-        if (handleRoutes && handleRoutes[url.pathname]) {
-            return handleRoutes[url.pathname](request);
-        }
         if (url.pathname === "/actions.json") {
             if (request.method === "POST") {
                 return handleSave(event);
@@ -6415,8 +6412,8 @@ const getMainHandler = ({ listActions , saveActions , handleAssetRequest: handle
             }
         }
         if (request.method === "GET") {
-            if (!url.pathname.includes(".")) return handlePage(request);
-            else handleAssetRequest1(request);
+            if (url.pathname.includes(".")) return handleAssetRequest1(request);
+            return handlePage(request);
         }
         return new Response(undefined, {
             status: 405
@@ -6827,6 +6824,28 @@ const handleRequest = getMainHandler({
     listActions,
     saveActions,
     handleAssetRequest: getAssetFromKV
+});
+self.addEventListener("fetch", (event)=>{
+    const { request  } = event;
+    const url = new URL(request.url);
+    if (url.pathname === "/api/actions.json") {
+        if (request.method === "POST") {
+            return event.respondWith(Promise.resolve(request).then((req)=>req.json()
+            ).then((actions)=>saveActions(actions, event)
+            ).then(()=>new Response("Saved", {
+                    status: 204
+                })
+            ));
+        }
+        if (request.method === "GET") {
+            return event.respondWith(Promise.resolve(request).then(listActions).then((actions)=>new Response(JSON.stringify(actions), {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+            ));
+        }
+    }
 });
 self.addEventListener("fetch", (event)=>{
     event.respondWith(handleRequest(event));
