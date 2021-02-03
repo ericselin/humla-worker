@@ -175,8 +175,8 @@ export const getMainHandler: MainHandler = (
 
     // normal get requests
     if (request.method === "GET") {
-      if (!url.pathname.includes(".")) return handlePage(request);
-      else handleAssetRequest(request);
+      if (url.pathname.includes(".")) return handleAssetRequest(request);
+      return handlePage(request);
     }
 
     // otherwise method is not supported
