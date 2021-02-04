@@ -82,7 +82,7 @@ const linkList = (field)=>(actions)=>actions.filter((a)=>!a.done
             })
         )
 ;
-const renderAction = (action)=>`\n<form method="post" action="/actions.json">\n  <input type="hidden" name="id" value="${action.id}">\n  <details>\n      <summary>\n        <input type="checkbox" name="done"${action.done ? " checked" : ""}>\n        ${action.title}\n        ${action.tags.map((tag)=>`<i>${tag}</i>`
+const renderAction = (action)=>`\n<form method="post" action="/upsert">\n  <input type="hidden" name="id" value="${action.id}">\n  <details>\n      <summary>\n        <input type="checkbox" name="done"${action.done ? " checked" : ""}>\n        ${action.title}\n        ${action.tags.map((tag)=>`<i>${tag}</i>`
     ).join(" ")} \n        ${action.date ? `<strong><time>${action.date}</time></strong>` : ""}\n      </summary>\n      <textarea name="body" cols="50" rows="5">${action.body}</textarea>\n      <input type="submit" value="Save"/>\n  </details>\n</form>\n`
 ;
 const renderLinkList = (links, placeholder = "\n")=>links.length ? `\n<ul>${links.map((link)=>`\n  <li><a href="${link.url}">${link.text}</a></li>`
@@ -179,26 +179,20 @@ const getSaveHandler = (saveAction)=>async (event)=>{
         });
     }
 ;
-const returnJson = (data)=>new Response(JSON.stringify(data), {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    })
-;
 const listActions = async ()=>{
     const cache = await caches.open("v1");
-    const response = await cache.match("/actions.json");
+    const response = await cache.match("/api/actions.json");
     return response?.json();
 };
 const saveActions = async (actions, event)=>{
     const cache = await caches.open("v1");
-    const actionsSerialized = JSON.stringify(actions);
-    event.waitUntil(fetch("/actions.json", {
+    const actionsJson = JSON.stringify(actions);
+    event.waitUntil(fetch("/api/actions.json", {
         method: "POST",
-        body: actionsSerialized,
+        body: actionsJson,
         redirect: "manual"
     }));
-    return cache.put("/actions.json", new Response(actionsSerialized));
+    return cache.put("/api/actions.json", new Response(actionsJson));
 };
 const handleAssetRequest = async (request)=>{
     return await caches.match(request) || fetch(request);
@@ -208,11 +202,11 @@ const populateCache = async ()=>{
         "/app.js", 
     ];
     const cache = await caches.open("v1");
-    const actions = await cache.match("/actions.json");
+    const actions = await cache.match("/api/actions.json");
     if (actions) {
         console.log("We already have some actions:", actions);
     } else {
-        assets.push("/actions.json");
+        assets.push("/api/actions.json");
     }
     return cache.addAll(assets);
 };
@@ -828,7 +822,7 @@ const renderGroup = (group, headingLevel)=>`\n<h${headingLevel}>${group.heading}
 ;
 const renderItem = (item, headingLevel)=>"heading" in item ? renderGroup(item, headingLevel) : renderAction(item)
 ;
-const renderPage = ({ list , autofocus , contexts , tags ,  })=>`\n<!DOCTYPE html>\n<html lang="en">\n\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Humla App - Simple but powerful todo manager</title>\n  <script src="/app.js"></script>\n</head>\n\n<body>\n  <h1>Humla App</h1>\n  <header>\n    <nav>\n      <h2>Dates</h2>\n      <ul>\n        <li><a href="/unprocessed">Unprocessed</a></li>\n        <li><a href="/today">Today</a></li>\n        <li><a href="/week">This Week</a></li>\n        <li><a href="/later">Later</a></li>\n        <li><a href="/someday">Someday</a></li>\n        <li><a href="/all">All</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    ${renderItem(list, 2)}\n  </main>\n  <aside>\n    <form method="post" action="/actions.json">\n      <h2>Add new action</h2>\n      <p>\n        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your\n        actions.\n      </p>\n      <p>\n        New actions will go under <i>Unprocessed</i> unless you set a date for them.\n        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.\n      </p>\n      <textarea name="body" cols="50" rows="5"${autofocus === "add" ? " autofocus" : ""}></textarea>\n      <input type="submit" value="Create"/>\n    </form>\n  </aside>\n  <footer>\n    <nav>\n      <h2>Contexts</h2>${renderLinkList(contexts, `\n      <p>\n        No contexts found<br>\n        Contexts start with an at-sign: <code>@context</code>\n      </p>`)}\n      <h2>Tags</h2>${renderLinkList(tags, `\n      <p>\n        No tags found<br>\n        Tags have the familiar hashtag format: <code>#tag</code>\n      </p>`)}\n    </nav>\n  </footer>\n</body>\n\n</html>\n`
+const renderPage = ({ list , autofocus , contexts , tags ,  })=>`\n<!DOCTYPE html>\n<html lang="en">\n\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Humla App - Simple but powerful todo manager</title>\n  <script src="/app.js"></script>\n</head>\n\n<body>\n  <h1>Humla App</h1>\n  <header>\n    <nav>\n      <h2>Dates</h2>\n      <ul>\n        <li><a href="/unprocessed">Unprocessed</a></li>\n        <li><a href="/today">Today</a></li>\n        <li><a href="/week">This Week</a></li>\n        <li><a href="/later">Later</a></li>\n        <li><a href="/someday">Someday</a></li>\n        <li><a href="/all">All</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    ${renderItem(list, 2)}\n  </main>\n  <aside>\n    <form method="post" action="/upsert">\n      <h2>Add new action</h2>\n      <p>\n        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your\n        actions.\n      </p>\n      <p>\n        New actions will go under <i>Unprocessed</i> unless you set a date for them.\n        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.\n      </p>\n      <textarea name="body" cols="50" rows="5"${autofocus === "add" ? " autofocus" : ""}></textarea>\n      <input type="submit" value="Create"/>\n    </form>\n  </aside>\n  <footer>\n    <nav>\n      <h2>Contexts</h2>${renderLinkList(contexts, `\n      <p>\n        No contexts found<br>\n        Contexts start with an at-sign: <code>@context</code>\n      </p>`)}\n      <h2>Tags</h2>${renderLinkList(tags, `\n      <p>\n        No tags found<br>\n        Tags have the familiar hashtag format: <code>#tag</code>\n      </p>`)}\n    </nav>\n  </footer>\n</body>\n\n</html>\n`
 ;
 const getPageHandler = (getActions)=>async (request)=>{
         const url = new URL(request.url);
@@ -871,17 +865,12 @@ const getMainHandler = ({ listActions: listActions1 , saveActions: saveActions1 
     return async (event)=>{
         const { request  } = event;
         const url = new URL(request.url);
-        if (url.pathname === "/actions.json") {
-            if (request.method === "POST") {
-                return handleSave(event);
-            }
-            if (request.method === "GET") {
-                return Promise.resolve(request).then(listActions1).then(returnJson);
-            }
-        }
         if (request.method === "GET") {
             if (url.pathname.includes(".")) return handleAssetRequest1(request);
             return handlePage(request);
+        }
+        if (request.method === "POST" && url.pathname === "/upsert") {
+            return handleSave(event);
         }
         return new Response(undefined, {
             status: 405

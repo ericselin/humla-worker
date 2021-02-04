@@ -6,7 +6,7 @@ import { getMainHandler } from "../lib/sw.ts";
 
 const listActions: ActionLister = async () => {
   const cache = await caches.open("v1");
-  const response = await cache.match("/actions.json");
+  const response = await cache.match("/api/actions.json");
   return response?.json();
 };
 

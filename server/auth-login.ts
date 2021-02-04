@@ -1,9 +1,16 @@
+/// <reference path="../domain.d.ts" />
+
+import { uuid } from "./deps.ts";
+
 /**
  * Options needed for authenticating with Google
  */
-type AuthOptions = {
+export type AuthOptions = {
   redirectUri: string;
   clientId: string;
+  clientSecret: string;
+  authorizationEndpoint: string;
+  tokenEndpoint: string;
 };
 
 /**
@@ -23,13 +30,34 @@ type AuthResponse = {
   token: string;
 };
 
+declare const ACTIONS: KVNamespace;
+
 export const _createCsrfToken = async (): Promise<string> => {
-  throw new Error("Not implemented");
+  const token = uuid.v4.generate();
+  await ACTIONS.put(`token-${token}`, "csrf token", { expirationTtl: 300 });
+  return token;
 };
 
-export const _getGoogleAuthRequestUrl = (opts: AuthOptions) =>
+export const _confirmCsrfToken = async (
+  authRedirectParams: AuthRedirect,
+): Promise<AuthRedirect> => {
+  const token = await ACTIONS.get(`token-${authRedirectParams.csrfToken}`);
+  if (!token) throw new Error("CSRF Token not found");
+  return authRedirectParams;
+};
+
+export const _getGoogleAuthRequestUrl = (
+  { clientId, redirectUri, authorizationEndpoint }: AuthOptions,
+) =>
   (csrfToken: string): string => {
-    throw new Error("Not implemented");
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: clientId,
+      scope: "openid email",
+      redirect_uri: redirectUri,
+      state: csrfToken,
+    });
+    return `${authorizationEndpoint}?${params.toString()}`;
   };
 
 export const redirectToGooleAuth = (opts: AuthOptions) =>
@@ -47,32 +75,64 @@ export const redirectToGooleAuth = (opts: AuthOptions) =>
       );
 
 export const _getAuthRedirectParams = (
-  event: FetchEvent,
+  url: string,
 ): AuthRedirect => {
-  throw new Error("Not implemented");
+  const urlObj = new URL(url);
+  const code = urlObj.searchParams.get("code");
+  const csrfToken = urlObj.searchParams.get("state");
+  if (!code || !csrfToken) {
+    throw new Error("Malformed url from redirect request");
+  }
+  return {
+    code,
+    csrfToken,
+  };
 };
 
-export const _confirmCsrfToken = async (
-  authRedirectParams: AuthRedirect,
-): Promise<AuthRedirect> => {
-  throw new Error("Not implemented");
-  return authRedirectParams;
-};
-
-export const _getAuthResponse = () =>
+/**
+ * Exchange `code` for access token and ID token
+ * by requesting the oauth token endpoint
+ */
+export const _getAuthResponse = (
+  { clientId, clientSecret, redirectUri, tokenEndpoint }: AuthOptions,
+) =>
   async ({ code }: AuthRedirect): Promise<AuthResponse> => {
-    throw new Error("Not implemented");
+    const params = {
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    };
+    const response = await fetch(tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) throw new Error(`Could not exchange code for client id`);
+    const { id_token } = await response.json();
+    if (!id_token) throw new Error(`Could not get id_token from auth response`);
+    return {
+      token: id_token,
+    };
   };
 
 export const _getRedirectToRootResponse = (
   { token }: AuthResponse,
-): Response => {
-  throw new Error("Not implemented");
-};
+): Response =>
+  new Response(undefined, {
+    status: 302,
+    headers: {
+      "Location": "/",
+      "Set-Cookie": `token=${token}; Same-Site=Lax; Path=/; Max-Age=2592000`, // 30 days in seconds
+    },
+  });
 
-export const redirectToRootWithTokenCookie = () =>
+export const redirectToRootWithTokenCookie = (opts: AuthOptions) =>
   async (event: FetchEvent): Promise<Response> =>
-    Promise.resolve(event)
+    Promise.resolve(event.request.url)
       .then(_getAuthRedirectParams)
-      .then(_getAuthResponse())
+      .then(_getAuthResponse(opts))
       .then(_getRedirectToRootResponse);
