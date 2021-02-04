@@ -23,7 +23,7 @@ const renderGroup = (group: ActionGroup, headingLevel: number) =>
 
 const renderAction = (action: Action) =>
   `
-<form method="post" action="/actions.json">
+<form method="post" action="/upsert">
   <input type="hidden" name="id" value="${action.id}">
   <details>
       <summary>
@@ -89,7 +89,7 @@ export const renderPage: PageRenderer = ({
     ${renderItem(list, 2)}
   </main>
   <aside>
-    <form method="post" action="/actions.json">
+    <form method="post" action="/upsert">
       <h2>Add new action</h2>
       <p>
         Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your

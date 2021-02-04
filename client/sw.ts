@@ -12,14 +12,14 @@ const listActions: ActionLister = async () => {
 
 const saveActions: ActionPersister = async (actions, event) => {
   const cache = await caches.open("v1");
-  const actionsSerialized = JSON.stringify(actions);
+  const actionsJson = JSON.stringify(actions);
   event.waitUntil(
     fetch(
-      "/actions.json",
-      { method: "POST", body: actionsSerialized, redirect: "manual" },
+      "/api/actions.json",
+      { method: "POST", body: actionsJson, redirect: "manual" },
     ),
   );
-  return cache.put("/actions.json", new Response(actionsSerialized));
+  return cache.put("/api/actions.json", new Response(actionsJson));
 };
 
 const handleAssetRequest: RequestHandler = async (request) => {
@@ -41,11 +41,11 @@ const populateCache = async () => {
     "/app.js",
   ];
   const cache = await caches.open("v1");
-  const actions = await cache.match("/actions.json");
+  const actions = await cache.match("/api/actions.json");
   if (actions) {
     console.log("We already have some actions:", actions);
   } else {
-    assets.push("/actions.json");
+    assets.push("/api/actions.json");
   }
   return cache.addAll(assets);
 };
