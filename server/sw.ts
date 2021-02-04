@@ -7,6 +7,10 @@ import { getMainHandler } from "../lib/sw.ts";
 import { getAssetFromKV } from "./kv-sites/mod.ts";
 import { getUserIdGetter, UserIdGetter } from "./auth.ts";
 import { ifEquals } from "./fn.ts";
+import {
+  redirectToGooleAuth,
+  redirectToRootWithTokenCookie,
+} from "./auth-login.ts";
 
 type UserActionsGetter = (userId: string) => Promise<Action[]>;
 type UserActionsSaver = (
@@ -99,32 +103,40 @@ const handleRequest = getMainHandler({
   handleAssetRequest,
 });
 
+type ServerOnlyRoutes = {
+  [methodAndPath: string]: (event: FetchEvent) => Promise<Response>;
+};
+
+const serverRoutes: ServerOnlyRoutes = {
+  "POST:/api/actions.json": (event) =>
+    Promise.resolve(event.request)
+      .then((req) => req.json() as Promise<Action[]>)
+      .then((actions) => saveActions(actions, event))
+      .then(() => new Response("Saved", { status: 204 })),
+  "GET:/api/actions.json": (event) =>
+    Promise.resolve(event.request)
+      .then(listActions)
+      .then((actions) =>
+        new Response(JSON.stringify(actions), {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+      ),
+  "GET:/login": redirectToGooleAuth(
+    { redirectUri: "https://humla.ericselin.workers.dev/oauth2", clientId },
+  ),
+  "GET:/oauth2": redirectToRootWithTokenCookie(),
+};
+
+const getMethodAndPath = (event: FetchEvent) =>
+  `${event.request.method}:${new URL(event.request.url).pathname}`;
+
 // add server-only routes
 self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-  if (url.pathname === "/api/actions.json") {
-    if (request.method === "POST") {
-      return event.respondWith(
-        Promise.resolve(request)
-          .then((req) => req.json() as Promise<Action[]>)
-          .then((actions) => saveActions(actions, event))
-          .then(() => new Response("Saved", { status: 204 })),
-      );
-    }
-    if (request.method === "GET") {
-      return event.respondWith(
-        Promise.resolve(request)
-          .then(listActions)
-          .then((actions) =>
-            new Response(JSON.stringify(actions), {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            })
-          ),
-      );
-    }
+  const methodAndPath = getMethodAndPath(event);
+  if (methodAndPath in serverRoutes) {
+    event.respondWith(serverRoutes[methodAndPath](event));
   }
 });
 
