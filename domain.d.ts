@@ -26,26 +26,25 @@ type ActionInput = {
 type ActionLister = (request: Request) => Promise<Action[]>;
 type ActionPersister = (actions: Action[], event: FetchEvent) => Promise<void>;
 
-type EventHandler = (event: FetchEvent) => Promise<Response> | Response;
-
+type FetchEventListener = (event: FetchEvent) => void;
+type EventHandler = (event: FetchEvent) => Promise<Response>;
 type RequestHandler = (
   request: Request,
-) => Promise<Response> | Response;
+) => Promise<Response>;
 
-type PageHandler = (getActions: ActionLister) => RequestHandler;
 type SaveHandler = (saveAction: ActionSaver) => EventHandler;
 type ActionSaver = (input: ActionInput, event: FetchEvent) => Promise<void>;
 type AssetHandler = (cache: Cache) => RequestHandler;
 
-type MainHandlerDependencies = {
+type MainListenerDependencies = {
   listActions: ActionLister;
   saveActions: ActionPersister;
   handleAssetRequest: RequestHandler;
 };
 
-type MainHandler = (
-  dependencies: MainHandlerDependencies,
-) => EventHandler;
+type MainListenerGetter = (
+  dependencies: MainListenerDependencies,
+) => FetchEventListener;
 
 type Link = {
   url: string;

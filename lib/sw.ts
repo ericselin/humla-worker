@@ -7,11 +7,6 @@ import { getActionSaver } from "./save.ts";
 
 type ActionFilter = (action: Action) => boolean;
 
-const filterActions = (filterer: ActionFilter) =>
-  (actions: Action[]) => {
-    return actions.filter(filterer);
-  };
-
 type RouteConfig = {
   heading: string;
   filter?: ActionFilter;
@@ -19,15 +14,15 @@ type RouteConfig = {
 };
 
 const routes: { [pathname: string]: RouteConfig } = {
-  "unprocessed": {
-    heading: "Unprocessed",
-    filter: (action) => !action.date && !action.done,
-  },
-  "today": {
+  "": {
     heading: "Today",
     filter: (action) =>
       (!!action.date && action.date <= today() && !action.done) ||
       action.done === today(),
+  },
+  "unprocessed": {
+    heading: "Unprocessed",
+    filter: (action) => !action.date && !action.done,
   },
   "week": {
     heading: "This week",
@@ -60,55 +55,56 @@ const routes: { [pathname: string]: RouteConfig } = {
   },
 };
 
-export const getPageHandler: PageHandler = (getActions) =>
-  async (request) => {
+export const getPageHandler = (getActions: ActionLister) =>
+  (request: Request): Promise<Response> | undefined => {
     const url = new URL(request.url);
+
+    // find route
+    const [, section = "", searchTerm] = url.pathname.split("/");
+    const route = routes[section];
+
+    // bail if no route found
+    if (!route) return;
 
     // default filter is no filter
     let filter: ActionFilter = () => true;
     let heading = "Actions";
 
-    // find route
-    const [, section, searchTerm] = url.pathname.split("/");
-    const route = routes[section];
-    if (route) {
-      heading = route.heading;
-      if (route.filter) filter = route.filter;
-      if (route.searchFilter) filter = route.searchFilter(searchTerm);
-    }
+    heading = route.heading;
+    if (route.filter) filter = route.filter;
+    if (route.searchFilter) filter = route.searchFilter(searchTerm);
 
-    const allActions = await getActions(request);
-    const actionGroup = await Promise
-      .resolve(allActions)
-      .then(filterActions(filter))
-      .then(groupBy("context"));
+    return Promise.resolve(request)
+      .then(getActions)
+      .then((allActions) => {
+        const groupedActions = groupBy("context")(allActions.filter(filter));
+        const contexts = linkList("context")(allActions);
+        const tags = linkList("tags")(allActions);
 
-    const contexts = linkList("context")(allActions);
-    const tags = linkList("tags")(allActions);
+        const renderOptions: PageRendererOptions = {
+          list: {
+            heading,
+            children: groupedActions,
+          },
+          contexts,
+          tags,
+        };
 
-    const renderOptions: PageRendererOptions = {
-      list: {
-        heading,
-        children: actionGroup,
-      },
-      contexts,
-      tags,
-    };
+        // add autofocus from hash
+        const focus = url.searchParams.get("focus");
+        if (focus) {
+          renderOptions.autofocus = focus;
+        }
 
-    // add autofocus from hash
-    const focus = url.searchParams.get("focus");
-    if (focus) {
-      renderOptions.autofocus = focus;
-    }
-
-    return new Response(
-      renderPage(renderOptions),
-      {
-        headers: {
-          "Content-Type": "text/html",
-        },
-      },
-    );
+        return new Response(
+          renderPage(renderOptions),
+          {
+            headers: {
+              "Content-Type": "text/html",
+            },
+          },
+        );
+      });
   };
 
 export const getSaveHandler: SaveHandler = (saveAction) =>
@@ -141,12 +137,12 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
     );
   };
 
-export const getMainHandler: MainHandler = (
-  { listActions, saveActions, handleAssetRequest },
-) => {
+export const getResponseGetter = (
+  { listActions, saveActions, handleAssetRequest }: MainListenerDependencies,
+): (event: FetchEvent) => Promise<Response> | undefined => {
   const handlePage = getPageHandler(listActions);
   const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
-  return async (event) => {
+  return (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
@@ -160,8 +156,21 @@ export const getMainHandler: MainHandler = (
     if (request.method === "POST" && url.pathname === "/upsert") {
       return handleSave(event);
     }
+  };
+};
 
-    // otherwise method is not supported
-    return new Response(undefined, { status: 405 });
+/**
+ * Get the main page event listener. This function calls `event.respondWith()`
+ * if a suitable route is found, otherwise just returns void without responding.
+ * 
+ * Add this as a fetch event handler with `addEventListener("fetch", ...)`.
+ * You should add a fallback (e.g. 404 returning) event listener after this
+ * for the cases where a route was not found.
+ */
+export const getMainEventListener: MainListenerGetter = (deps) => {
+  const getResponse = getResponseGetter(deps);
+  return (event) => {
+    const response = getResponse(event);
+    if (response) event.respondWith(response);
   };
 };

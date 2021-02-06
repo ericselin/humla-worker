@@ -2,39 +2,44 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-import { getMainHandler } from "../lib/sw.ts";
+import { getMainEventListener } from "../lib/sw.ts";
 
 const listActions: ActionLister = async () => {
-  const cache = await caches.open("v1");
-  const response = await cache.match("/api/actions.json");
-  return response?.json();
+  // TODO: ADD UPDATED ACTIONS TO CACHE
+  // const cache = await caches.open("v1");
+  // const response = await cache.match("/api/actions.json");
+  const response = await fetch("/api/actions.json");
+  return response?.json() || [];
 };
 
 const saveActions: ActionPersister = async (actions, event) => {
-  const cache = await caches.open("v1");
   const actionsJson = JSON.stringify(actions);
-  event.waitUntil(
-    fetch(
-      "/api/actions.json",
-      { method: "POST", body: actionsJson, redirect: "manual" },
-    ),
+  // TODO: PUT ACTIONS TO CACHE
+  // const cache = await caches.open("v1");
+  // event.waitUntil(
+  //   fetch(
+  //     "/api/actions.json",
+  //     { method: "POST", body: actionsJson, redirect: "manual" },
+  //   ),
+  // );
+  // return cache.put("/api/actions.json", new Response(actionsJson));
+  await fetch(
+    "/api/actions.json",
+    { method: "POST", body: actionsJson },
   );
-  return cache.put("/api/actions.json", new Response(actionsJson));
 };
 
 const handleAssetRequest: RequestHandler = async (request) => {
   return await caches.match(request) || fetch(request);
 };
 
-const handleRequest = getMainHandler({
+const mainEventListener = getMainEventListener({
   listActions,
   saveActions,
   handleAssetRequest,
 });
 
-self.addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event));
-});
+self.addEventListener("fetch", mainEventListener);
 
 const populateCache = async () => {
   const assets = [

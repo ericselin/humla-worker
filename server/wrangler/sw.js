@@ -111,18 +111,14 @@ const getDate = (dateParser)=>(body)=>{
 const getTitle = (body)=>{
     return body.split("\n")[0];
 };
-const filterActions = (filterer)=>(actions)=>{
-        return actions.filter(filterer);
-    }
-;
 const routes = {
+    "": {
+        heading: "Today",
+        filter: (action)=>!!action.date && action.date <= today() && !action.done || action.done === today()
+    },
     "unprocessed": {
         heading: "Unprocessed",
         filter: (action)=>!action.date && !action.done
-    },
-    "today": {
-        heading: "Today",
-        filter: (action)=>!!action.date && action.date <= today() && !action.done || action.done === today()
     },
     "week": {
         heading: "This week",
@@ -6447,47 +6443,47 @@ const renderGroup = (group, headingLevel)=>`\n<h${headingLevel}>${group.heading}
 ;
 const renderItem = (item, headingLevel)=>"heading" in item ? renderGroup(item, headingLevel) : renderAction(item)
 ;
-const renderPage = ({ list , autofocus , contexts , tags ,  })=>`\n<!DOCTYPE html>\n<html lang="en">\n\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Humla App - Simple but powerful todo manager</title>\n  <script src="/app.js"></script>\n</head>\n\n<body>\n  <h1>Humla App</h1>\n  <header>\n    <nav>\n      <h2>Dates</h2>\n      <ul>\n        <li><a href="/unprocessed">Unprocessed</a></li>\n        <li><a href="/today">Today</a></li>\n        <li><a href="/week">This Week</a></li>\n        <li><a href="/later">Later</a></li>\n        <li><a href="/someday">Someday</a></li>\n        <li><a href="/all">All</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    ${renderItem(list, 2)}\n  </main>\n  <aside>\n    <form method="post" action="/upsert">\n      <h2>Add new action</h2>\n      <p>\n        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your\n        actions.\n      </p>\n      <p>\n        New actions will go under <i>Unprocessed</i> unless you set a date for them.\n        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.\n      </p>\n      <textarea name="body" cols="50" rows="5"${autofocus === "add" ? " autofocus" : ""}></textarea>\n      <input type="submit" value="Create"/>\n    </form>\n  </aside>\n  <footer>\n    <nav>\n      <h2>Contexts</h2>${renderLinkList(contexts, `\n      <p>\n        No contexts found<br>\n        Contexts start with an at-sign: <code>@context</code>\n      </p>`)}\n      <h2>Tags</h2>${renderLinkList(tags, `\n      <p>\n        No tags found<br>\n        Tags have the familiar hashtag format: <code>#tag</code>\n      </p>`)}\n    </nav>\n  </footer>\n</body>\n\n</html>\n`
+const renderPage = ({ list , autofocus , contexts , tags ,  })=>`\n<!DOCTYPE html>\n<html lang="en">\n\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Humla App - Simple but powerful todo manager</title>\n  <script src="/app.js"></script>\n</head>\n\n<body>\n  <h1>Humla App</h1>\n  <header>\n    <nav>\n      <h2>Dates</h2>\n      <ul>\n        <li><a href="/unprocessed">Unprocessed</a></li>\n        <li><a href="/">Today</a></li>\n        <li><a href="/week">This Week</a></li>\n        <li><a href="/later">Later</a></li>\n        <li><a href="/someday">Someday</a></li>\n        <li><a href="/all">All</a></li>\n      </ul>\n    </nav>\n  </header>\n  <main>\n    ${renderItem(list, 2)}\n  </main>\n  <aside>\n    <form method="post" action="/upsert">\n      <h2>Add new action</h2>\n      <p>\n        Add a new action here. Use <code>#tag</code> to add tags and <code>@context</code> to add a context to your\n        actions.\n      </p>\n      <p>\n        New actions will go under <i>Unprocessed</i> unless you set a date for them.\n        Use e.g. <code>!today</code> or <code>!15.12</code> to add dates from here.\n      </p>\n      <textarea name="body" cols="50" rows="5"${autofocus === "add" ? " autofocus" : ""}></textarea>\n      <input type="submit" value="Create"/>\n    </form>\n  </aside>\n  <footer>\n    <nav>\n      <h2>Contexts</h2>${renderLinkList(contexts, `\n      <p>\n        No contexts found<br>\n        Contexts start with an at-sign: <code>@context</code>\n      </p>`)}\n      <h2>Tags</h2>${renderLinkList(tags, `\n      <p>\n        No tags found<br>\n        Tags have the familiar hashtag format: <code>#tag</code>\n      </p>`)}\n    </nav>\n  </footer>\n</body>\n\n</html>\n`
 ;
-const getPageHandler = (getActions)=>async (request)=>{
+const getPageHandler = (getActions)=>(request)=>{
         const url = new URL(request.url);
+        const [, section = "", searchTerm] = url.pathname.split("/");
+        const route = routes[section];
+        if (!route) return;
         let filter = ()=>true
         ;
         let heading = "Actions";
-        const [, section, searchTerm] = url.pathname.split("/");
-        const route = routes[section];
-        if (route) {
-            heading = route.heading;
-            if (route.filter) filter = route.filter;
-            if (route.searchFilter) filter = route.searchFilter(searchTerm);
-        }
-        const allActions = await getActions(request);
-        const actionGroup = await Promise.resolve(allActions).then(filterActions(filter)).then(groupBy("context"));
-        const contexts = linkList("context")(allActions);
-        const tags = linkList("tags")(allActions);
-        const renderOptions = {
-            list: {
-                heading,
-                children: actionGroup
-            },
-            contexts,
-            tags
-        };
-        const focus = url.searchParams.get("focus");
-        if (focus) {
-            renderOptions.autofocus = focus;
-        }
-        return new Response(renderPage(renderOptions), {
-            headers: {
-                "Content-Type": "text/html"
+        heading = route.heading;
+        if (route.filter) filter = route.filter;
+        if (route.searchFilter) filter = route.searchFilter(searchTerm);
+        return Promise.resolve(request).then(getActions).then((allActions)=>{
+            const groupedActions = groupBy("context")(allActions.filter(filter));
+            const contexts = linkList("context")(allActions);
+            const tags = linkList("tags")(allActions);
+            const renderOptions = {
+                list: {
+                    heading,
+                    children: groupedActions
+                },
+                contexts,
+                tags
+            };
+            const focus = url.searchParams.get("focus");
+            if (focus) {
+                renderOptions.autofocus = focus;
             }
+            return new Response(renderPage(renderOptions), {
+                headers: {
+                    "Content-Type": "text/html"
+                }
+            });
         });
     }
 ;
-const getMainHandler = ({ listActions , saveActions , handleAssetRequest: handleAssetRequest1  })=>{
+const getResponseGetter = ({ listActions , saveActions , handleAssetRequest: handleAssetRequest1  })=>{
     const handlePage = getPageHandler(listActions);
     const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
-    return async (event)=>{
+    return (event)=>{
         const { request  } = event;
         const url = new URL(request.url);
         if (request.method === "GET") {
@@ -6497,9 +6493,13 @@ const getMainHandler = ({ listActions , saveActions , handleAssetRequest: handle
         if (request.method === "POST" && url.pathname === "/upsert") {
             return handleSave(event);
         }
-        return new Response(undefined, {
-            status: 405
-        });
+    };
+};
+const getMainEventListener = (deps)=>{
+    const getResponse = getResponseGetter(deps);
+    return (event)=>{
+        const response = getResponse(event);
+        if (response) event.respondWith(response);
     };
 };
 function rsa_pkcs1_verify(key8, s, m) {
@@ -6902,7 +6902,7 @@ const getUserIdGetter = (jwks1, clientId)=>async (request)=>{
 const userIdGetter = getUserIdGetter(jwks, authOptions.clientId);
 const listActions = getServerActionLister(userIdGetter, userActionsGetter);
 const saveActions = getServerActionSaver(userIdGetter, userActionsSaver);
-const handleRequest = getMainHandler({
+const mainEventListener = getMainEventListener({
     listActions,
     saveActions,
     handleAssetRequest: getAssetFromKV
@@ -6931,9 +6931,7 @@ self.addEventListener("fetch", (event)=>{
         event.respondWith(serverRoutes[methodAndPath](event));
     }
 });
-self.addEventListener("fetch", (event)=>{
-    event.respondWith(handleRequest(event));
-});
+self.addEventListener("fetch", mainEventListener);
 function ber_decode(bytes, from, to) {
     return ber_next1(bytes);
 }

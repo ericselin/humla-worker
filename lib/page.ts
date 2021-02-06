@@ -77,7 +77,7 @@ export const renderPage: PageRenderer = ({
       <h2>Dates</h2>
       <ul>
         <li><a href="/unprocessed">Unprocessed</a></li>
-        <li><a href="/today">Today</a></li>
+        <li><a href="/">Today</a></li>
         <li><a href="/week">This Week</a></li>
         <li><a href="/later">Later</a></li>
         <li><a href="/someday">Someday</a></li>

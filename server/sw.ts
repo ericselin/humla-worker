@@ -3,7 +3,7 @@
 
 declare const self: ServiceWorkerGlobalScope;
 
-import { getMainHandler } from "../lib/sw.ts";
+import { getMainEventListener } from "../lib/sw.ts";
 import { getAssetFromKV } from "./kv-sites/mod.ts";
 import { getUserIdGetter, UserIdGetter } from "./auth.ts";
 import { ifEquals } from "./fn.ts";
@@ -119,7 +119,7 @@ const saveActions = getServerActionSaver(
 
 const handleAssetRequest: RequestHandler = getAssetFromKV;
 
-const handleRequest = getMainHandler({
+const mainEventListener = getMainEventListener({
   listActions,
   saveActions,
   handleAssetRequest,
@@ -169,6 +169,4 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
-self.addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event));
-});
+self.addEventListener("fetch", mainEventListener);
