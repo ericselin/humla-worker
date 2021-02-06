@@ -170,3 +170,8 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("fetch", mainEventListener);
+
+// TODO: THIS GETS MOVED BEFORE THE ONES ABOVE, FOR SOME REASON!
+// self.addEventListener("fetch", (event) => {
+//   event.respondWith(new Response("Not found", { status: 404 }));
+// });
