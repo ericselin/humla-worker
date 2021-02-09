@@ -5,14 +5,26 @@ import { groupBy, linkList } from "./list.ts";
 import { renderPage } from "./page.ts";
 import { getActionSaver } from "./save.ts";
 
+/**
+ * Action filtering function for use with e.g. `array.map`
+ */
 type ActionFilter = (action: Action) => boolean;
 
+/**
+ * Route configuration for action list rendering routes
+ */
 type RouteConfig = {
+  /** Page title / heading */
   heading: string;
+  /** Optional action filtering function */
   filter?: ActionFilter;
+  /** Optional action filtering function that filters based on a specific search term */
   searchFilter?: (searchTerm: string) => ActionFilter;
 };
 
+/**
+ * Main routes used for rendering specific action lists
+ */
 const routes: { [pathname: string]: RouteConfig } = {
   "": {
     heading: "Today",
@@ -55,7 +67,11 @@ const routes: { [pathname: string]: RouteConfig } = {
   },
 };
 
-export const getPageHandler = (getActions: ActionLister) =>
+/**
+ * Get a request handler that renders a "page" i.e. route. Handler returns
+ * undefined if no route is found.
+ */
+export const _getPageHandler = (getActions: ActionLister) =>
   (request: Request): Promise<Response> | undefined => {
     const url = new URL(request.url);
 
@@ -107,7 +123,13 @@ export const getPageHandler = (getActions: ActionLister) =>
       });
   };
 
-export const getSaveHandler: SaveHandler = (saveAction) =>
+/**
+ * Save handler will parse the request form data and save the 
+ * action with the provided `saveAction` function. Then it will
+ * redirect back to the referrer, possibly specifying the
+ * page to focus the add action textbox.
+ */
+export const _getSaveHandler: SaveHandler = (saveAction) =>
   async (event) => {
     const { request } = event;
     const form = await request.formData();
@@ -137,11 +159,15 @@ export const getSaveHandler: SaveHandler = (saveAction) =>
     );
   };
 
-export const getResponseGetter = (
+/**
+ * Response getter will return a promise of a response based on the request,
+ * or undefined if no suitable route was found.
+ */
+export const _getResponseGetter = (
   { listActions, saveActions, handleAssetRequest }: MainListenerDependencies,
 ): (event: FetchEvent) => Promise<Response> | undefined => {
-  const handlePage = getPageHandler(listActions);
-  const handleSave = getSaveHandler(getActionSaver(listActions, saveActions));
+  const handlePage = _getPageHandler(listActions);
+  const handleSave = _getSaveHandler(getActionSaver(listActions, saveActions));
   return (event) => {
     const { request } = event;
     const url = new URL(request.url);
@@ -168,7 +194,7 @@ export const getResponseGetter = (
  * for the cases where a route was not found.
  */
 export const getMainEventListener: MainListenerGetter = (deps) => {
-  const getResponse = getResponseGetter(deps);
+  const getResponse = _getResponseGetter(deps);
   return (event) => {
     const response = getResponse(event);
     if (response) event.respondWith(response);

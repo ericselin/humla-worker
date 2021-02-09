@@ -27,6 +27,8 @@ The only requirement for developing and building the project is the awesome Deno
 - [x] make shared sw routes explicit and return undefined / 404 if not found
 - [x] add fallback on client to server routes (for e.g. /login)
 - [x] refresh actions from server at some point
+- [ ] refresh jwt
+- [ ] create firebase todo importer
 - [ ] create server 404
 - [ ] make action cache strategy
 - [ ] handle expired tokens
