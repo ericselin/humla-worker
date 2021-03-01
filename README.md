@@ -64,6 +64,14 @@ Server only, handled in separate fetch event listener on server
   - GET /login
   - GET /oauth2
 
+### Login flow
+
+The main `/login` route uses the flow [as documented by Google](https://developers.google.com/identity/protocols/oauth2/openid-connect#server-flow). This route should show the account chooser just in case.
+
+If the token has expired (which happens after an hour), the user should be redirected to the `/re-login` page. In this case the [`login_hint`](https://developers.google.com/identity/protocols/oauth2/openid-connect#authenticationuriparameters) needs to be set in order to avoid the account chooser. This of course only if we know the user from before.
+
+For the `/api` routes, we should do the same redirect flow (without account chooser) as in the previous section. This works especially well for the `GET` route. For the `POST` route, we don't want to carry over the whole action array in state. In this case the client needs to re-authenticate (via the redirect flow) and then send the `POST` again.
+
 ### Deployment
 
 On Windows, just run `publish.ps1`.
