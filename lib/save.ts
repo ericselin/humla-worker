@@ -1,7 +1,7 @@
 /// <reference path="../domain.d.ts" />
 
 import { DateParser, parseDate, today } from "./dates.ts";
-import { uuid } from "./deps.ts";
+import { uuid } from "./uuid.js";
 
 export const getTags = (body: string): string[] => {
   const regex = /(?:^|\s)(#\w+)/g;
@@ -32,7 +32,7 @@ export const getTitle = (body: string): string => {
 
 export const processActionInput = (input: ActionInput): Action => {
   const action: Action = {
-    id: input.id || uuid.v4.generate(),
+    id: input.id || uuid(),
     body: input.body,
     context: getContext(input.body),
     title: getTitle(input.body),
