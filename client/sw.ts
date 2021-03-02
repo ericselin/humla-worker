@@ -1,6 +1,6 @@
 /// <reference path="../domain.d.ts" />
 
-declare const self: ServiceWorkerGlobalScope;
+declare const caches: CacheStorage;
 
 import { getMainEventListener } from "../lib/sw.ts";
 
@@ -55,6 +55,6 @@ const populateCache = async () => {
   return cache.addAll(assets);
 };
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", (event: ExtendableEvent) => {
   event.waitUntil(populateCache());
 });

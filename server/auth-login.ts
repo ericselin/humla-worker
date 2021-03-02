@@ -1,4 +1,4 @@
-/// <reference path="../domain.d.ts" />
+import "https://raw.githubusercontent.com/ericselin/worker-types/v1.0.0/cloudflare-worker-types.ts";
 
 import { uuid } from "./deps.ts";
 
@@ -61,7 +61,7 @@ export const _getGoogleAuthRequestUrl = (
   };
 
 export const redirectToGooleAuth = (opts: AuthOptions) =>
-  async (): Promise<Response> =>
+  (): Promise<Response> =>
     Promise.resolve()
       .then(_createCsrfToken)
       .then(_getGoogleAuthRequestUrl(opts))
@@ -131,7 +131,7 @@ export const _getRedirectToRootResponse = (
   });
 
 export const redirectToRootWithTokenCookie = (opts: AuthOptions) =>
-  async (event: FetchEvent): Promise<Response> =>
+  (event: FetchEvent): Promise<Response> =>
     Promise.resolve(event.request.url)
       .then(_getAuthRedirectParams)
       .then(_getAuthResponse(opts))

@@ -3,8 +3,13 @@
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
   },
-  "deno.import_intellisense_origins": {
-    "https://deno.land": true
+  "liveServer.settings.root": "/client",
+  "liveServer.settings.CustomBrowser": "chrome",
+  "liveServer.settings.proxy": {
+    "enable": true,
+    "baseUri": "/",
+    "proxyUri": "https://humla.ericselin.workers.dev"
   },
-  "liveServer.settings.root": "/client"
+  "deno.lint": true,
+  "deno.unstable": true
 }

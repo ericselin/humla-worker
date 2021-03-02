@@ -1,5 +1,5 @@
 /// <reference path="./domain.d.ts" />
-/// <reference path="../cf-runtime.d.ts" />
+import "https://raw.githubusercontent.com/ericselin/worker-types/v1.0.0/cloudflare-worker-types.ts";
 
 declare const ASSETS: KVNamespace | undefined;
 
