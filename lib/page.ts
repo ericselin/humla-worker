@@ -67,14 +67,13 @@ export const renderPage: PageRenderer = ({
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Humla App - Simple but powerful todo manager</title>
-  <script src="/app.js"></script>
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
   <h1>Humla App</h1>
   <header>
     <nav>
-      <h2>Dates</h2>
       <ul>
         <li><a href="/unprocessed">Unprocessed</a></li>
         <li><a href="/">Today</a></li>

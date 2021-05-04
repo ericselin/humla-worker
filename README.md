@@ -4,7 +4,7 @@ Todo-app proof-of-concept utilizing workers and other performance optimizations.
 
 ## Objectives
 
-- Unreal performance 
+- Unreal performance
   - Near-instant first load and other server rendering => Cloudflare workers
   - Instantaneous subsequent page loads => service workers
   - Installable with offline capability => PWA
@@ -72,6 +72,15 @@ If the token has expired (which happens after an hour), the user should be redir
 
 For the `/api` routes, we should do the same redirect flow (without account chooser) as in the previous section. This works especially well for the `GET` route. For the `POST` route, we don't want to carry over the whole action array in state. In this case the client needs to re-authenticate (via the redirect flow) and then send the `POST` again.
 
+### Local preview
+
+In one terminal, run `deno bundle --unstable --watch ./server/sw.ts ./server/wrangler/sw.js`.
+
+In another, run `wrangler preview --watch` in the `server/wrangler` directory.
+
 ### Deployment
 
-On Windows, just run `publish.ps1`.
+Deploy the client side assets with the `./publish-client.sh` bash script.
+
+Deploy the Worker with `deno bundle ./server/sw.ts ./server/wrangler/sw.js`.
+
