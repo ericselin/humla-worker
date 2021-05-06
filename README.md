@@ -22,23 +22,6 @@ Todo-app proof-of-concept utilizing workers and other performance optimizations.
 
 The only requirement for developing and building the project is the awesome Deno runtime (one batteries-included executable).
 
-### Todo for RC
-
-- [x] make shared sw routes explicit and return undefined / 404 if not found
-- [x] add fallback on client to server routes (for e.g. /login)
-- [x] refresh actions from server at some point
-- [ ] refresh jwt
-- [ ] create firebase todo importer
-- [ ] create server 404
-- [ ] make action cache strategy
-- [ ] handle expired tokens
-- [ ] create login status and link in html
-- [ ] make it clear that checking an item requires save
-- [ ] style page
-- [ ] create mechanism for refreshing discovery document
-- [ ] create logout
-- [ ] fix firefox class error (ditch uuid module)
-
 ### Routes
 
 Page rendering and form submission routes are shared between client and server. This is what is called the "main handler", and it lives in `lib/sw.ts`. The other files in that folder are built for that handler. This means that the same (service worker) code can be used both on the client and on the Cloudflare worker.
