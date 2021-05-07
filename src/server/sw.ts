@@ -1,7 +1,7 @@
 /// <reference path="../domain.d.ts" />
 
 import { getMainEventListener } from "../lib/sw.ts";
-import { getAssetFromKV } from "./kv-sites/mod.ts";
+import { getAssetFromKV } from "./site-asset-handler.ts";
 import { getUserIdGetter, UserIdGetter } from "./auth.ts";
 import { ifEquals } from "./fn.ts";
 import {
@@ -34,7 +34,7 @@ declare const GOOGLE_CLIENT_SECRET: string;
 const authOptions: AuthOptions = {
   clientId:
     "804405641493-mcs851cmajqo8edi72ndiaophfg78bgb.apps.googleusercontent.com",
-  redirectUri: "https://humla.ericselin.workers.dev/oauth2",
+  redirectUri: "http://localhost:8787/oauth2", //"https://humla.ericselin.workers.dev/oauth2",
   authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenEndpoint: "https://oauth2.googleapis.com/token",
   clientSecret: GOOGLE_CLIENT_SECRET,

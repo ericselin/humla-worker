@@ -9,3 +9,11 @@ kv_namespaces = [
   { binding = "ASSETS", id = "5708240827844761a93e82f00abec273", preview_id = "5708240827844761a93e82f00abec273" },
   { binding = "ACTIONS", id = "caa1346db8af4d24a59dfc3834ae1bc0", preview_id = "caa1346db8af4d24a59dfc3834ae1bc0" },
 ]
+
+[site]
+bucket = "./public"
+entry-point = "worker"
+
+[build]
+upload.format = "service-worker"
+command = "deno bundle src/server/sw.ts worker/sw.js"

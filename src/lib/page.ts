@@ -67,7 +67,162 @@ export const renderPage: PageRenderer = ({
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Humla App - Simple but powerful todo manager</title>
-  <link rel="stylesheet" href="/style.css">
+  <style>
+    :root {
+      --nord0: #2e3440;
+      --nord1: #3b4252;
+      --nord2: #434c5e;
+      --nord3: #4c566a;
+      --nord4: #d8dee9;
+      --nord5: #e5e9f0;
+      --nord6: #eceff4;
+      --nord7: #8fbcbb;
+      --nord8: #88c0d0;
+      --nord9: #81a1c1;
+      --nord10: #5e81ac;
+      --nord11: #bf616a;
+      --nord12: #d08770;
+      --nord13: #ebcb8b;
+      --nord14: #a3be8c;
+      --nord15: #b48ead;
+
+      --margin: 1rem;
+      --max-width: min(600px, 100% - 4 * var(--margin));
+
+      --color-bg: var(--nord0);
+      --color-fg: var(--nord6);
+      --color-body: var(--nord1);
+      --color-indent: var(--nord3);
+      --color-muted: var(--nord4);
+      --color-accent: var(--nord8);
+
+      --font-text: 'Inter', sans-serif;
+      --font-heading: 'Source Code Pro', monospace;
+      --font-mono: 'Source Code Pro', monospace;
+    }
+
+    @media (min-width: 500px) {
+      :root {
+        --margin: 1.5rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      :root {
+        --margin: 2rem;
+      }
+    }
+
+    body {
+      padding: 0;
+      margin: 0;
+      font-family: var(--font-text);
+      background: var(--color-body);
+      color: var(--color-fg);
+    }
+
+    body > header {
+      margin: var(--margin);
+      color: var(--color-muted);
+      font-family: var(--font-heading);
+    }
+
+    body > header > a {
+      text-decoration: none;
+      font-weight: 900;
+      font-size: 2rem;
+      background: var(--color-accent);
+      width: 2rem;
+      height: 2rem;
+      line-height: 1.5rem;
+      text-align: center;
+      border-radius: 25%;
+      color: var(--color-body);
+    }
+
+    body > header > a:hover {
+      color: var(--color-bg);
+    }
+
+    body > header ul {
+      display: flex;
+      list-style: none;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+    }
+
+    body > header li + li {
+      margin-left: 1rem;
+    }
+
+    body > h1 {
+      margin: var(--margin);
+      color: var(--color-muted);
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    main {
+      max-width: var(--max-width);
+      margin: var(--margin) auto;
+      padding: 0 var(--margin);
+      background: var(--color-bg);
+      border-radius: 1rem;
+      line-height: 1.25;
+    }
+
+    main::before,
+    main::after {
+      content: ' ';
+      display: block;
+      contain: layout;
+      margin: var(--margin) 0;
+    }
+
+    aside {
+      display: none;
+    }
+
+    h1 a,
+    h2 a,
+    h3 a,
+    h4 a,
+    h5 a,
+    h6 a {
+      text-decoration: none;
+    }
+
+    a {
+      color: inherit;
+      transition: color ease-in 200ms;
+    }
+
+    a:hover {
+      color: var(--color-accent);
+    }
+
+    code {
+      font-family: var(--font-mono);
+      line-height: initial;
+    }
+
+    .button-link {
+      border: 1px solid var(--color-accent);
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    body > footer {
+      margin: var(--margin);
+      text-align: center;
+      color: var(--color-muted);
+      font-family: var(--font-heading);
+    }
+  </style>
 </head>
 
 <body>
