@@ -185,6 +185,36 @@ export const renderPage: PageRenderer = ({
       display: none;
     }
 
+    #create:target {
+      display: block;
+      max-width: var(--max-width);
+      margin: auto;
+      background: var(--nord0);
+      border-radius: 1rem;
+      line-height: 1.25;
+      contain: layout;
+      padding: 0 var(--margin);
+    }
+
+    #create form {
+      margin: var(--margin) 0;
+    }
+
+    #create textarea {
+      width: 100%;
+      display: block;
+      max-width: 100%;
+    }
+
+    #create [type=submit] {
+      margin-top: var(--margin);
+      background: var(--nord8);
+      border: none;
+      border-radius: 0.25rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+
     h1 a,
     h2 a,
     h3 a,
@@ -242,7 +272,7 @@ export const renderPage: PageRenderer = ({
   <main>
     ${renderItem(list, 2)}
   </main>
-  <aside>
+  <aside id="create">
     <form method="post" action="/upsert">
       <h2>Add new action</h2>
       <p>
